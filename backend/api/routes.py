@@ -22,6 +22,7 @@ from backend.services.context_resolver import ContextResolver
 from backend.services.grouper import Grouper
 from backend.services.cache import AnalysisCache
 from backend.services.problem_summarizer import ProblemSummarizer
+from backend.services.admin_url_builder import build_admin_url
 from backend.classifiers.hybrid_classifier import HybridClassifier
 
 logger = logging.getLogger(__name__)
@@ -285,18 +286,19 @@ def _build_canvas(
         # })
             link_url = link.url
             path = urlparse(link_url).path
-            item_id = path.split('/')[-1]
-            app_id = path.split('/')[4]
-            admin_url = f"https://intercomrades.intercom.com/admin/{link.url_type}s?app_id={app_id}&conversation_id={item_id}"
+            item_id = path.split('/')[-1] if path.split('/') else ""
+            admin_url = build_admin_url(link_url, link.url_type)
             status_icon = _STATUS_ICON.get(link.example_status, "\u2753")
             confidence_pct = f"{link.confidence:.0%}"
+
+            admin_link = f"[admin]({admin_url})" if admin_url else ""
             components.append({
                 "type": "text",
                 "text": (f" {j+1} | "
                          f"{status_icon} | "
                          f"{item_id} | "
                          f"[app]({link_url}) | "
-                         f"[admin]({admin_url}) | "
+                         f"{admin_link} | "
                          f"{confidence_pct}"),
             })
 
