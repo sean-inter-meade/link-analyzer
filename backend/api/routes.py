@@ -295,9 +295,26 @@ def _error_canvas(message: str) -> dict[str, Any]:
 
 
 def _extract_conversation_id(body: dict[str, Any]) -> str | None:
-    return body.get("conversation_id") or body.get("context", {}).get(
-        "conversation_id"
-    )
+    conversation = body.get("conversation") or {}
+    if isinstance(conversation, dict):
+        cid = conversation.get("id") or conversation.get("conversation_id")
+        if cid:
+            return str(cid)
+
+    context = body.get("context") or {}
+    if isinstance(context, dict):
+        cid = context.get("conversation_id") or context.get("conversation", {}).get(
+            "id"
+        )
+        if cid:
+            return str(cid)
+
+    cid = body.get("conversation_id")
+    if cid:
+        return str(cid)
+
+    logger.warning("No conversation_id found. Payload keys: %s", list(body.keys()))
+    return None
 
 
 @router.post("/canvas/initialize")
