@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import APIRouter
 
@@ -183,38 +184,36 @@ def _build_canvas(
 ) -> dict[str, Any]:
     components: list[dict[str, Any]] = []
 
-    components.append({"type": "text", "text": "**Link Analysis**", "style": "header"})
-
     summary = response.summary
     components.append({
         "type": "text",
         "text": (
-            f"\U0001f7e2 {summary.working_count} Working | "
-            f"\U0001f534 {summary.broken_count} Broken | "
-            f"⚪ {summary.unknown_count} Unknown"
+            f"\U0001f7e2 {summary.working_count} | "
+            f"\U0001f7e2 {summary.broken_count} | "
+            f"\U00002753 {summary.unknown_count}"
         ),
     })
 
     components.append({"type": "divider"})
 
-    current_filters = active_filters or set()
-    filter_buttons: list[dict[str, Any]] = []
-    for filter_id, label in [
-        ("broken_only", "Broken only"),
-        ("working_only", "Working only"),
-        ("user_links", "User links"),
-        ("admin_links", "Admin/Fin links"),
-        ("workflows_only", "Workflows"),
-        ("conversations_only", "Conversations"),
-    ]:
-        style = "primary" if filter_id in current_filters else "secondary"
-        filter_buttons.append({
-            "type": "button",
-            "label": label,
-            "style": style,
-            "id": filter_id,
-            "action": {"type": "submit"},
-        })
+    # current_filters = active_filters or set()
+    # filter_buttons: list[dict[str, Any]] = []
+    # for filter_id, label in [
+    #     ("broken_only", "Broken only"),
+    #     ("working_only", "Working only"),
+    #     ("user_links", "User links"),
+    #     ("admin_links", "Admin/Fin links"),
+    #     ("workflows_only", "Workflows"),
+    #     ("conversations_only", "Conversations"),
+    # ]:
+    #     style = "primary" if filter_id in current_filters else "secondary"
+    #     filter_buttons.append({
+    #         "type": "button",
+    #         "label": label,
+    #         "style": style,
+    #         "id": filter_id,
+    #         "action": {"type": "submit"},
+    #     })
 
     components.append({
         "type": "button",
@@ -224,8 +223,18 @@ def _build_canvas(
         "action": {"type": "submit"},
     })
 
-    for btn in filter_buttons:
-        components.append(btn)
+    # for btn in filter_buttons:
+    #     components.append(btn)
+    components.append({
+        "type": "text",
+        "text": (
+            f" # | "
+            f" id | "
+            f"Admin | "
+            f"App | "
+            f"Con"
+        ),
+    })
 
     components.append({"type": "divider"})
 
@@ -236,7 +245,7 @@ def _build_canvas(
         })
         return {"canvas": {"content": {"components": components}}}
 
-    status_order = ["broken_example", "working_example", "neutral_or_unknown"]
+    status_order = ["broken", "working", "unknown"]
     ordered_groups = sorted(
         response.groups,
         key=lambda g: (
@@ -250,33 +259,33 @@ def _build_canvas(
         group_label = group.example_status.replace("_", " ").title()
         components.append({
             "type": "text",
-            "text": f"**{group_label} ({len(group.items)})**",
+            "text": f"{group_label} ({len(group.items)})",
         })
 
-        for link in group.items:
-            truncated_url = (link.url[:57] + "...") if len(link.url) > 60 else link.url
+        for j, link in enumerate(group.items):
+            link_url = link.url
+            path = urlparse(link_url).path
+            item_id = path.split('/')[-1]
+            app_id = path.split('/')[4]
+            new_url = f"https://intercomrades.intercom.com/admin/{group_label}s?app_id={app_id}&conversation_id={item_id}"
             components.append({
                 "type": "text",
-                "text": f"- {truncated_url} [{link.url_type}] {link.confidence:.0%}",
+                "text": (f"{j}| "
+                         f"{item_id} | "
+                         f"[app]() | "
+                         f"[admin]({link_url}) | "
+                         f"{link.confidence:.0%}"),
             })
 
-            context_snippet = link.selected_context_text
-            if len(context_snippet) > 120:
-                context_snippet = context_snippet[:117] + "..."
-            components.append({
-                "type": "text",
-                "text": context_snippet,
-                "style": "paragraph",
-            })
+            # context_snippet = link.selected_context_text
+            # if len(context_snippet) > 120:
+            #     context_snippet = context_snippet[:117] + "..."
+            # components.append({
+            #     "type": "text",
+            #     "text": context_snippet,
+            #     "style": "paragraph",
+            # })
 
-            components.append({
-                "type": "text",
-                "text": (
-                    f"Context: {link.selected_context_reason} "
-                    f"| Author: {link.selected_context_author_type}"
-                ),
-                "style": "muted",
-            })
 
         if i < len(ordered_groups) - 1:
             components.append({"type": "divider"})
