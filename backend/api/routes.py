@@ -284,6 +284,10 @@ def _build_canvas(
         })
 
         for j, link in enumerate(group.items):
+            components.append({
+            "type": "text",
+            "text": f"{link.url_type})",
+        })
             link_url = link.url
             path = urlparse(link_url).path
             item_id = path.split('/')[-1]
