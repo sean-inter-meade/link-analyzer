@@ -189,26 +189,26 @@ def _build_canvas(
 ) -> dict[str, Any]:
     components: list[dict[str, Any]] = []
 
+    summary = response.summary
+
+    components.append({
+        "type": "text",
+        "text": (
+            f"\U0001f7e2 Work {summary.working_count} | "
+            f"\U000026a0 Broken {summary.broken_count} | "
+            f"\U00002753 Unknown {summary.unknown_count}"
+        ),
+    })
+
     if response.problem_summary:
         truncated = response.problem_summary
         if len(truncated) > 200:
             truncated = truncated[:197] + "..."
         components.append({
             "type": "text",
-            "text": f"**Problem:** {truncated}",
+            "text": f"*Problem:* {truncated}",
         })
         components.append({"type": "divider"})
-
-    summary = response.summary
-
-    components.append({
-        "type": "text",
-        "text": (
-            f"\U0001f7e2 {summary.working_count} | "
-            f"\U0001f7e2 {summary.broken_count} | "
-            f"\U00002753 {summary.unknown_count}"
-        ),
-    })
 
     components.append({"type": "divider"})
 
@@ -231,13 +231,7 @@ def _build_canvas(
     #         "action": {"type": "submit"},
     #     })
 
-    components.append({
-        "type": "button",
-        "label": "Refresh",
-        "style": "secondary",
-        "id": "refresh",
-        "action": {"type": "submit"},
-    })
+    
 
     # for btn in filter_buttons:
     #     components.append(btn)
@@ -245,6 +239,7 @@ def _build_canvas(
         "type": "text",
         "text": (
             f" # | "
+            f" type | "
             f" id | "
             f"Admin | "
             f"App | "
@@ -254,22 +249,22 @@ def _build_canvas(
 
     components.append({"type": "divider"})
 
-    if not response.links:
-        components.append({
-            "type": "text",
-            "text": "No links found in this conversation.",
-        })
-        return {"canvas": {"content": {"components": components}}}
+    # if not response.links:
+    #     components.append({
+    #         "type": "text",
+    #         "text": "No links found in this conversation.",
+    #     })
+    #     return {"canvas": {"content": {"components": components}}}
 
-    status_order = ["broken", "working", "unknown"]
-    ordered_groups = sorted(
-        response.groups,
-        key=lambda g: (
-            status_order.index(g.example_status)
-            if g.example_status in status_order
-            else len(status_order)
-        ),
-    )
+    # status_order = ["broken", "working", "unknown"]
+    # ordered_groups = sorted(
+    #     response.groups,
+    #     key=lambda g: (
+    #         status_order.index(g.example_status)
+    #         if g.example_status in status_order
+    #         else len(status_order)
+    #     ),
+    # )
 
     for i, group in enumerate(ordered_groups):
         group_label = group.example_status.replace("_", " ").title()
@@ -281,7 +276,7 @@ def _build_canvas(
         for j, link in enumerate(group.items):
             components.append({
             "type": "text",
-            "text": f"{link.url_type})",
+            "text": f"{link.url_type}",
         })
             link_url = link.url
             path = urlparse(link_url).path
@@ -290,7 +285,8 @@ def _build_canvas(
             admin_url = f"https://intercomrades.intercom.com/admin/{link.url_type}s?app_id={app_id}&conversation_id={item_id}"
             components.append({
                 "type": "text",
-                "text": (f"{j}| "
+                "text": (f" {j+1} | "
+                         f"{link.example_status} | "
                          f"{item_id} | "
                          f"[app](link_url) | "
                          f"[admin]({admin_url}) | "
@@ -309,6 +305,14 @@ def _build_canvas(
 
         if i < len(ordered_groups) - 1:
             components.append({"type": "divider"})
+
+    components.append({
+        "type": "button",
+        "label": "Refresh",
+        "style": "secondary",
+        "id": "refresh",
+        "action": {"type": "submit"},
+    })
 
     return {"canvas": {"content": {"components": components}}}
 
