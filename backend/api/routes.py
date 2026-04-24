@@ -249,22 +249,22 @@ def _build_canvas(
 
     components.append({"type": "divider"})
 
-    # if not response.links:
-    #     components.append({
-    #         "type": "text",
-    #         "text": "No links found in this conversation.",
-    #     })
-    #     return {"canvas": {"content": {"components": components}}}
+    if not response.links:
+        components.append({
+            "type": "text",
+            "text": "No links found in this conversation.",
+        })
+        return {"canvas": {"content": {"components": components}}}
 
-    # status_order = ["broken", "working", "unknown"]
-    # ordered_groups = sorted(
-    #     response.groups,
-    #     key=lambda g: (
-    #         status_order.index(g.example_status)
-    #         if g.example_status in status_order
-    #         else len(status_order)
-    #     ),
-    # )
+    status_order = ["broken", "working", "unknown"]
+    ordered_groups = sorted(
+        response.groups,
+        key=lambda g: (
+            status_order.index(g.example_status)
+            if g.example_status in status_order
+            else len(status_order)
+        ),
+    )
 
     for i, group in enumerate(ordered_groups):
         group_label = group.example_status.replace("_", " ").title()
