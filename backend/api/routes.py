@@ -288,8 +288,8 @@ def _build_canvas(
                 "type": "text",
                 "text": f"{status_icon} *{status_label}*",
             })
+            components.append({"type": "spacer", "size": "xs"})
 
-            list_items: list[dict[str, Any]] = []
             for link in group.items:
                 link_url = link.url
                 path = urlparse(link_url).path
@@ -299,42 +299,38 @@ def _build_canvas(
                 type_label = link.url_type.replace("_", " ").title()
                 confidence_pct = f"{link.confidence:.0%}"
 
-                subtitle_parts = [f"{confidence_pct} confidence"]
-                if admin_url:
-                    subtitle_parts.append(f"[Admin]({admin_url})")
-                subtitle_parts.append(f"[Open in app]({link_url})")
-
-                list_items.append({
-                    "type": "item",
-                    "id": f"link-{link.message_id}-{item_id}",
-                    "title": f"{type_icon} {type_label} {item_id}",
-                    "subtitle": "  \u00b7  ".join(subtitle_parts),
-                    "action": {"type": "url", "url": link_url},
+                components.append({
+                    "type": "text",
+                    "text": f"{type_icon} *{type_label}* {item_id} \u2014 {confidence_pct}",
                 })
 
-            components.append({"type": "list", "items": list_items})
+                link_parts = [f"[Open in app]({link_url})"]
+                if admin_url:
+                    link_parts.append(f"[Admin]({admin_url})")
+                components.append({
+                    "type": "text",
+                    "text": "  \u00b7  ".join(link_parts),
+                    "style": "muted",
+                })
+                components.append({"type": "spacer", "size": "xs"})
+
             components.append({"type": "spacer", "size": "s"})
 
     if other_links:
         components.append({"type": "divider"})
         components.append({
             "type": "text",
-            "text": f"\U0001f517 *Other Links*",
+            "text": "\U0001f517 *Other Links*",
         })
+        components.append({"type": "spacer", "size": "xs"})
 
-        list_items = []
         for link in other_links:
             hostname = urlparse(link.url).hostname or ""
-            truncated_url = (link.url[:50] + "...") if len(link.url) > 53 else link.url
-            list_items.append({
-                "type": "item",
-                "id": f"other-{link.message_id}",
-                "title": hostname,
-                "subtitle": truncated_url,
-                "action": {"type": "url", "url": link.url},
+            components.append({
+                "type": "text",
+                "text": f"[{hostname}]({link.url})",
             })
-
-        components.append({"type": "list", "items": list_items})
+            components.append({"type": "spacer", "size": "xs"})
 
     components.append({"type": "spacer", "size": "m"})
     components.append({
