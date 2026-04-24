@@ -21,6 +21,7 @@ from backend.services.url_categorizer import UrlCategorizer
 from backend.services.context_resolver import ContextResolver
 from backend.services.grouper import Grouper
 from backend.services.cache import AnalysisCache
+from backend.services.problem_summarizer import ProblemSummarizer
 from backend.classifiers.hybrid_classifier import HybridClassifier
 
 logger = logging.getLogger(__name__)
@@ -88,11 +89,15 @@ def _run_pipeline(
 
     summary, groups = grouper.group_by_status(links)
 
+    summarizer = ProblemSummarizer()
+    problem_summary = summarizer.summarize(messages)
+
     return AnalysisResponse(
         conversation_id=conversation_id,
         summary=summary,
         links=links,
         groups=groups,
+        problem_summary=problem_summary,
     )
 
 
@@ -183,6 +188,16 @@ def _build_canvas(
     response: AnalysisResponse, active_filters: set[str] | None = None
 ) -> dict[str, Any]:
     components: list[dict[str, Any]] = []
+
+    if response.problem_summary:
+        truncated = response.problem_summary
+        if len(truncated) > 200:
+            truncated = truncated[:197] + "..."
+        components.append({
+            "type": "text",
+            "text": f"**Problem:** {truncated}",
+        })
+        components.append({"type": "divider"})
 
     summary = response.summary
 

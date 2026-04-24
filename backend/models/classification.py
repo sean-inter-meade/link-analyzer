@@ -76,6 +76,7 @@ class AnalysisResponse(BaseModel):
     summary: AnalysisSummary
     links: list[ExtractedLink]
     groups: list[LinkGroup]
+    problem_summary: str = ""
 
 
 class AnalyzeRequest(BaseModel):
