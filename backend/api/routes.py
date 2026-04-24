@@ -185,6 +185,12 @@ def _build_canvas(
     components: list[dict[str, Any]] = []
 
     summary = response.summary
+
+    components.append({
+        "type": "text",
+        "text": summary,
+    })
+
     components.append({
         "type": "text",
         "text": (
@@ -267,13 +273,13 @@ def _build_canvas(
             path = urlparse(link_url).path
             item_id = path.split('/')[-1]
             app_id = path.split('/')[4]
-            new_url = f"https://intercomrades.intercom.com/admin/{group_label}s?app_id={app_id}&conversation_id={item_id}"
+            admin_url = f"https://intercomrades.intercom.com/admin/{link.url_type}s?app_id={app_id}&conversation_id={item_id}"
             components.append({
                 "type": "text",
                 "text": (f"{j}| "
                          f"{item_id} | "
-                         f"[app]() | "
-                         f"[admin]({link_url}) | "
+                         f"[app](link_url) | "
+                         f"[admin]({admin_url}) | "
                          f"{link.confidence:.0%}"),
             })
 
