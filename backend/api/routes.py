@@ -208,7 +208,6 @@ def _build_canvas(
             "type": "text",
             "text": f"*Problem:* {truncated}",
         })
-        components.append({"type": "divider"})
 
     components.append({"type": "divider"})
 
@@ -268,16 +267,16 @@ def _build_canvas(
 
     for i, group in enumerate(ordered_groups):
         group_label = group.example_status.replace("_", " ").title()
-        components.append({
-            "type": "text",
-            "text": f"{group_label} ({len(group.items)})",
-        })
+        # components.append({
+        #     "type": "text",
+        #     "text": f"{group_label} ({len(group.items)})",
+        # })
 
         for j, link in enumerate(group.items):
-            components.append({
-            "type": "text",
-            "text": f"{link.url_type}",
-        })
+        #     components.append({
+        #     "type": "text",
+        #     "text": f"{link.url_type}",
+        # })
             link_url = link.url
             path = urlparse(link_url).path
             item_id = path.split('/')[-1]
