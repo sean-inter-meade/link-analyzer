@@ -39,6 +39,23 @@ NEGATIVE_PHRASES = [
     "not expected",
     "problem",
     "broken example",
+    "not right",
+    "wrong",
+    "misbehaving",
+    "unexpected",
+    "not supposed to",
+    "should not",
+    "shouldn't",
+    "does not work",
+    "isn't working",
+    "stopped working",
+    "never worked",
+    "doesn't trigger",
+    "not triggering",
+    "not firing",
+    "won't fire",
+    "doesn't fire",
+    "no longer works",
 ]
 
 UNCERTAINTY_PHRASES = [
@@ -49,6 +66,8 @@ UNCERTAINTY_PHRASES = [
     "might",
     "could be",
     "not sure",
+    "unclear",
+    "hard to tell",
 ]
 
 FRAMING_PHRASES = [
@@ -57,6 +76,11 @@ FRAMING_PHRASES = [
     "see this workflow",
     "take a look at",
     "check this",
+    "this is where",
+    "for example",
+    "for instance",
+    "here is where",
+    "this is the one",
 ]
 
 NEGATION_CUES = frozenset({

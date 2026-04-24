@@ -35,7 +35,7 @@ class TransformerClassifier:
 
             self._pipeline = pipeline(
                 "zero-shot-classification",
-                model="facebook/bart-large-mnli",
+                model="valhalla/distilbart-mnli-12-1",
                 device=-1,
             )
         except Exception:
