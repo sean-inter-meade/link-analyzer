@@ -379,46 +379,54 @@ def _extract_conversation_id(body: dict[str, Any]) -> str | None:
 
 @router.post("/canvas/initialize")
 async def canvas_initialize(body: dict[str, Any]) -> dict[str, Any]:
-    conversation_id = _extract_conversation_id(body)
-    if not conversation_id:
-        return _error_canvas("Error: No conversation_id found in payload.")
+    try:
+        conversation_id = _extract_conversation_id(body)
+        if not conversation_id:
+            return _error_canvas("Error: No conversation_id found in payload.")
 
-    response = _analyze_conversation(conversation_id)
-    return _build_canvas(response)
+        response = _analyze_conversation(conversation_id)
+        return _build_canvas(response)
+    except Exception as exc:
+        logger.exception("canvas_initialize failed")
+        return _error_canvas(f"Error: {type(exc).__name__}: {exc}")
 
 
 @router.post("/canvas/submit")
 async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
-    logger.info("Canvas submit payload: %s", body)
+    try:
+        logger.info("Canvas submit payload: %s", body)
 
-    conversation_id = _extract_conversation_id(body)
-    if not conversation_id:
-        return _error_canvas("Error: No conversation_id found in payload.")
+        conversation_id = _extract_conversation_id(body)
+        if not conversation_id:
+            return _error_canvas("Error: No conversation_id found in payload.")
 
-    clicked = (
-        body.get("component_id")
-        or body.get("id")
-        or body.get("input_values", {}).get("component_id")
-        or ""
-    )
-    logger.info("Submit clicked=%s conversation=%s", clicked, conversation_id)
+        clicked = (
+            body.get("component_id")
+            or body.get("id")
+            or body.get("input_values", {}).get("component_id")
+            or ""
+        )
+        logger.info("Submit clicked=%s conversation=%s", clicked, conversation_id)
 
-    if clicked == "refresh":
-        _cache.invalidate(conversation_id)
+        if clicked == "refresh":
+            _cache.invalidate(conversation_id)
 
-    stored = body.get("stored_data", {})
-    active_filters: set[str] = set(stored.get("current_filters", []))
+        stored = body.get("stored_data", {})
+        active_filters: set[str] = set(stored.get("current_filters", []))
 
-    all_filter_ids = set(FILTER_OPTIONS) | set(AUTHOR_FILTERS) | set(URL_TYPE_FILTERS)
-    if clicked in all_filter_ids:
-        if clicked in active_filters:
-            active_filters.discard(clicked)
-        else:
-            active_filters.add(clicked)
+        all_filter_ids = set(FILTER_OPTIONS) | set(AUTHOR_FILTERS) | set(URL_TYPE_FILTERS)
+        if clicked in all_filter_ids:
+            if clicked in active_filters:
+                active_filters.discard(clicked)
+            else:
+                active_filters.add(clicked)
 
-    response = _analyze_conversation(conversation_id)
-    filtered = _apply_filters(response, active_filters)
-    canvas = _build_canvas(filtered, active_filters)
+        response = _analyze_conversation(conversation_id)
+        filtered = _apply_filters(response, active_filters)
+        canvas = _build_canvas(filtered, active_filters)
 
-    canvas["canvas"]["stored_data"] = {"current_filters": sorted(active_filters)}
-    return canvas
+        canvas["canvas"]["stored_data"] = {"current_filters": sorted(active_filters)}
+        return canvas
+    except Exception as exc:
+        logger.exception("canvas_submit failed")
+        return _error_canvas(f"Error: {type(exc).__name__}: {exc}")
