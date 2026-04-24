@@ -41,3 +41,6 @@ waitForPort = 8080
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[agent]
+expertMode = true
