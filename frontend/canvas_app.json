@@ -1,0 +1,22 @@
+{
+  "app_name": "Link Analyzer",
+  "description": "Analyzes conversation links and classifies them as working examples, broken examples, or unknown",
+  "location": "conversation-sidebar",
+  "webhooks": {
+    "initialize": {
+      "url": "https://YOUR_DOMAIN/canvas/initialize",
+      "description": "Called when the app loads in the Inbox sidebar"
+    },
+    "submit": {
+      "url": "https://YOUR_DOMAIN/canvas/submit",
+      "description": "Called when user interacts with the app"
+    }
+  },
+  "capabilities": ["conversation-context"],
+  "setup_notes": [
+    "1. Register this app in the Intercom Developer Hub",
+    "2. Set the webhook URLs to point to your FastAPI backend",
+    "3. Enable conversation-context capability to receive conversation_id",
+    "4. Install the app in your Intercom workspace"
+  ]
+}

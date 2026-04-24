@@ -1,0 +1,79 @@
+# URL type classification patterns.
+# Each rule is evaluated top-to-bottom; the first match wins.
+# Fields:
+#   url_type   – the UrlType enum value to assign
+#   hostnames  – list of hostname substrings to match (OR)
+#   paths      – list of path substrings to match (OR)
+#   notes      – human-readable explanation
+
+rules:
+  - url_type: conversation
+    hostnames:
+      - app.intercom.com
+      - app.intercom.io
+    paths:
+      - /conversations/
+      - /conversation/
+    notes: Intercom conversation URLs
+
+  - url_type: workflow
+    hostnames:
+      - app.intercom.com
+      - app.intercom.io
+    paths:
+      - /workflows/
+      - /workflow/
+      - /operator/workflows
+    notes: Intercom workflow builder URLs
+
+  - url_type: custom_action
+    hostnames:
+      - app.intercom.com
+      - app.intercom.io
+    paths:
+      - /custom-action
+      - /actions/
+      - /custom_actions/
+      - /platform/actions
+    notes: Intercom custom action URLs
+
+  - url_type: article
+    hostnames:
+      - app.intercom.com
+      - app.intercom.io
+    paths:
+      - /articles/
+      - /article/
+      - /educate/articles
+    notes: Intercom articles (internal editor view)
+
+  - url_type: help_center
+    hostnames:
+      - help.
+      - support.
+      - intercom.help
+    paths:
+      - /articles/
+      - /en/articles/
+      - /collections/
+    notes: Public help center domains and article paths
+
+  - url_type: loom
+    hostnames:
+      - loom.com
+      - www.loom.com
+    paths: []
+    notes: Loom screen recordings
+
+  - url_type: github
+    hostnames:
+      - github.com
+      - www.github.com
+    paths: []
+    notes: GitHub links (issues, PRs, repos)
+
+  # Fallback – must be last
+  - url_type: other
+    hostnames: []
+    paths: []
+    notes: Catch-all for unrecognized URLs
