@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import spacy
 from spacy.matcher import PhraseMatcher
 
@@ -10,15 +12,19 @@ _PROBLEM_PHRASES = [
     "issue", "error", "bug", "reproduce", "timeout", "crash",
     "invalid", "incorrect", "not expected", "problem", "broken example",
     "can't", "unable", "wrong", "unexpected", "stuck", "hangs",
+    "doesn't trigger", "not triggering", "not firing",
 ]
 
 _FRAMING_PHRASES = [
     "here is an example", "this conversation shows", "see this workflow",
     "take a look at", "check this", "having trouble", "having an issue",
     "experiencing", "noticed that", "seems like", "appears to be",
+    "the issue is", "the problem is", "the bug is",
 ]
 
-_REPORTER_TYPES = {AuthorType.USER, AuthorType.LEAD}
+_URL_RE = re.compile(r"(?:https?://|www\.)[^\s<>\"'\)]+")
+
+_MIN_SENTENCE_LEN = 15
 
 
 class ProblemSummarizer:
@@ -29,19 +35,19 @@ class ProblemSummarizer:
         self._matcher.add("FRAMING", [self._nlp.make_doc(p) for p in _FRAMING_PHRASES])
 
     def summarize(self, messages: list[ConversationMessage], max_sentences: int = 2) -> str:
-        reporter_text = " ".join(
-            m.body_text for m in messages if m.author_type in _REPORTER_TYPES
+        all_text = " ".join(
+            _URL_RE.sub("", m.body_text).strip() for m in messages
         )
 
-        if not reporter_text.strip():
+        if not all_text.strip():
             return ""
 
-        doc = self._nlp(reporter_text)
+        doc = self._nlp(all_text)
         scored: list[tuple[float, str]] = []
 
         for sent in doc.sents:
             sent_text = sent.text.strip()
-            if len(sent_text) < 10:
+            if len(sent_text) < _MIN_SENTENCE_LEN:
                 continue
 
             sent_doc = sent.as_doc()
@@ -55,20 +61,14 @@ class ProblemSummarizer:
                 elif label == "FRAMING":
                     score += 1.0
 
-            # Boost earlier sentences slightly — problem statements tend to come first
-            position_bonus = 0.5 if len(scored) < 3 else 0.0
-            score += position_bonus
-
             if score > 0:
                 scored.append((score, sent_text))
 
         if not scored:
-            first_reporter = next(
-                (m for m in messages if m.author_type in _REPORTER_TYPES), None
-            )
-            if first_reporter:
-                text = first_reporter.body_text.strip()
-                return text[:200] + "..." if len(text) > 200 else text
+            for m in messages:
+                text = _URL_RE.sub("", m.body_text).strip()
+                if len(text) >= _MIN_SENTENCE_LEN:
+                    return text[:200] + "..." if len(text) > 200 else text
             return ""
 
         scored.sort(key=lambda x: x[0], reverse=True)

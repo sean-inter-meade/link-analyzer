@@ -4,7 +4,7 @@ import re
 
 from backend.models import AuthorType, ConversationMessage, ContextReason
 
-_URL_RE = re.compile(r"https?://[^\s<>\"'\)]+")
+_URL_RE = re.compile(r"(?:https?://|www\.)[^\s<>\"'\)]+")
 
 _DIAGNOSTIC_PHRASES = [
     "this works",

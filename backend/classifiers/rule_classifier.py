@@ -126,8 +126,10 @@ class RuleClassifier:
         else:
             status = ExampleStatus.NEUTRAL_OR_UNKNOWN
 
-        confidence = min(abs(rule_score) / 3.0, 1.0)
-        confidence = max(confidence - (uncertainty_count * 0.3), 0.0)
+        # 1 match → 0.55, 2 → 0.80, 3+ → ~0.93+
+        abs_score = abs(rule_score)
+        confidence = abs_score / (abs_score + 0.8) if abs_score > 0 else 0.0
+        confidence = max(confidence - (uncertainty_count * 0.15), 0.0)
 
         signals = ClassificationSignals(
             positive_phrases=positive_matched,

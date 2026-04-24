@@ -35,7 +35,6 @@ rules:
       - /outbound/overview
       - /settings/general
       - /home
-      - /inbox
     notes: >
       Overview and dashboard pages that are not specific to a resource.
       Also matches standalone=1 overview links.

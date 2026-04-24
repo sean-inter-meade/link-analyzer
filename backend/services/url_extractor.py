@@ -5,7 +5,7 @@ from datetime import datetime
 
 from backend.models import ConversationMessage
 
-_URL_RE = re.compile(r"https?://[^\s<>\"'\)]+")
+_URL_RE = re.compile(r"(?:https?://|www\.)[^\s<>\"'\)]+")
 _ANCHOR_RE = re.compile(
     r'<a\s[^>]*href=["\'](?P<url>https?://[^"\']+)["\'][^>]*>(?P<text>.*?)</a>',
     re.IGNORECASE | re.DOTALL,
@@ -23,6 +23,8 @@ class UrlExtractor:
 
             for match in _URL_RE.finditer(msg.body_text):
                 url = match.group()
+                if url.startswith("www."):
+                    url = "https://" + url
                 if url in seen_urls:
                     continue
                 seen_urls.add(url)
