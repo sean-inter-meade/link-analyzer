@@ -288,14 +288,16 @@ def _build_canvas(
             item_id = path.split('/')[-1]
             app_id = path.split('/')[4]
             admin_url = f"https://intercomrades.intercom.com/admin/{link.url_type}s?app_id={app_id}&conversation_id={item_id}"
+            status_icon = _STATUS_ICON.get(link.example_status, "\u2753")
+            confidence_pct = f"{link.confidence:.0%}"
             components.append({
                 "type": "text",
                 "text": (f" {j+1} | "
-                         f"{_STATUS_ICON.get(link.example_status, '\U00002753')} | "
+                         f"{status_icon} | "
                          f"{item_id} | "
-                         f"[app](link_url) | "
+                         f"[app]({link_url}) | "
                          f"[admin]({admin_url}) | "
-                         f"{link.confidence:.0%}"),
+                         f"{confidence_pct}"),
             })
 
             # context_snippet = link.selected_context_text
