@@ -29,6 +29,12 @@ router = APIRouter()
 
 _cache = AnalysisCache()
 
+_STATUS_ICON = {
+    "working_example": "\U0001f7e2",
+    "broken_example": "\U000026a0",
+    "neutral_or_unknown": "\U00002753",
+}
+
 
 def _get_provider() -> IntercomApiConversationProvider:
     return IntercomApiConversationProvider()
@@ -285,7 +291,7 @@ def _build_canvas(
             components.append({
                 "type": "text",
                 "text": (f" {j+1} | "
-                         f"{link.example_status} | "
+                         f"{_STATUS_ICON.get(link.example_status, '\U00002753')} | "
                          f"{item_id} | "
                          f"[app](link_url) | "
                          f"[admin]({admin_url}) | "
