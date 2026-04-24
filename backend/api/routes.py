@@ -56,6 +56,9 @@ def _run_pipeline(
 
     for url_dict in extracted_url_dicts:
         url_type = categorizer.categorize(url_dict["url"])
+        if url_type == "excluded":
+            logger.info("Skipping excluded URL: %s", url_dict["url"])
+            continue
         context = resolver.resolve(url_dict, messages)
         fallback_used = context["selected_context_reason"] in (
             "bare_url_fallback_to_previous",
@@ -262,58 +265,61 @@ def _build_canvas(
         })
         return {"canvas": {"content": {"components": components}}}
 
-    status_order = ["broken", "working", "unknown"]
-    ordered_groups = sorted(
-        response.groups,
-        key=lambda g: (
-            status_order.index(g.example_status)
-            if g.example_status in status_order
-            else len(status_order)
-        ),
-    )
+    intercom_links = [l for l in response.links if l.url_type != "other"]
+    other_links = [l for l in response.links if l.url_type == "other"]
 
-    for i, group in enumerate(ordered_groups):
-        group_label = group.example_status.replace("_", " ").title()
-        # components.append({
-        #     "type": "text",
-        #     "text": f"{group_label} ({len(group.items)})",
-        # })
+    # Intercom links grouped by status
+    if intercom_links:
+        grouper = Grouper()
+        _, intercom_groups = grouper.group_by_status(intercom_links)
 
-        for j, link in enumerate(group.items):
-        #     components.append({
-        #     "type": "text",
-        #     "text": f"{link.url_type}",
-        # })
-            link_url = link.url
-            path = urlparse(link_url).path
-            item_id = path.split('/')[-1] if path.split('/') else ""
-            admin_url = build_admin_url(link_url, link.url_type)
-            status_icon = _STATUS_ICON.get(link.example_status, "\u2753")
-            confidence_pct = f"{link.confidence:.0%}"
+        status_order = ["broken_example", "working_example", "neutral_or_unknown"]
+        ordered_groups = sorted(
+            intercom_groups,
+            key=lambda g: (
+                status_order.index(g.example_status)
+                if g.example_status in status_order
+                else len(status_order)
+            ),
+        )
 
-            admin_link = f"[admin]({admin_url})" if admin_url else ""
+        for i, group in enumerate(ordered_groups):
+            for j, link in enumerate(group.items):
+                link_url = link.url
+                path = urlparse(link_url).path
+                item_id = path.split('/')[-1] if path.split('/') else ""
+                admin_url = build_admin_url(link_url, link.url_type)
+                status_icon = _STATUS_ICON.get(link.example_status, "\u2753")
+                confidence_pct = f"{link.confidence:.0%}"
+
+                admin_link = f"[admin]({admin_url})" if admin_url else ""
+                components.append({
+                    "type": "text",
+                    "text": (f" {j+1} | "
+                             f"{status_icon} | "
+                             f"{item_id} | "
+                             f"[app]({link_url}) | "
+                             f"{admin_link} | "
+                             f"{confidence_pct}"),
+                })
+
+            if i < len(ordered_groups) - 1:
+                components.append({"type": "divider"})
+
+    # Other (external) links section
+    if other_links:
+        components.append({"type": "divider"})
+        components.append({
+            "type": "text",
+            "text": f"**Other Links ({len(other_links)})**",
+        })
+        for j, link in enumerate(other_links):
+            truncated_url = (link.url[:57] + "...") if len(link.url) > 60 else link.url
+            hostname = urlparse(link.url).hostname or ""
             components.append({
                 "type": "text",
-                "text": (f" {j+1} | "
-                         f"{status_icon} | "
-                         f"{item_id} | "
-                         f"[app]({link_url}) | "
-                         f"{admin_link} | "
-                         f"{confidence_pct}"),
+                "text": f" {j+1} | {hostname} | [{truncated_url}]({link.url})",
             })
-
-            # context_snippet = link.selected_context_text
-            # if len(context_snippet) > 120:
-            #     context_snippet = context_snippet[:117] + "..."
-            # components.append({
-            #     "type": "text",
-            #     "text": context_snippet,
-            #     "style": "paragraph",
-            # })
-
-
-        if i < len(ordered_groups) - 1:
-            components.append({"type": "divider"})
 
     components.append({
         "type": "button",

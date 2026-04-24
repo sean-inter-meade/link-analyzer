@@ -5,21 +5,50 @@
 #   hostnames  – list of hostname substrings to match (OR)
 #   paths      – list of path substrings to match (OR)
 #   notes      – human-readable explanation
+#
+# Intercom app hostnames cover all regions:
+#   US: app.intercom.com / app.intercom.io
+#   EU: app.eu.intercom.com / app.eu.intercom.io
+#   AU: app.au.intercom.com / app.au.intercom.io
+# Using "app." + "intercom.com" as separate entries catches all three.
+
+# Shared hostname anchor used by all Intercom app rules.
+# Every rule below that targets the Intercom app UI uses _intercom_app_hosts.
+_intercom_app_hosts: &intercom_app
+  - app.intercom.com
+  - app.intercom.io
+  - app.eu.intercom.com
+  - app.eu.intercom.io
+  - app.au.intercom.com
+  - app.au.intercom.io
 
 rules:
+  # Excluded — overview/dashboard/index pages with no specific resource
+  - url_type: excluded
+    hostnames: *intercom_app
+    paths:
+      - /workflows-overview
+      - /automation/overview
+      - /automation/workflows-overview
+      - /reports/overview
+      - /operator/overview
+      - /outbound/overview
+      - /settings/general
+      - /home
+      - /inbox
+    notes: >
+      Overview and dashboard pages that are not specific to a resource.
+      Also matches standalone=1 overview links.
+
   - url_type: conversation
-    hostnames:
-      - app.intercom.com
-      - app.intercom.io
+    hostnames: *intercom_app
     paths:
       - /conversations/
       - /conversation/
     notes: Intercom conversation URLs
 
   - url_type: workflow
-    hostnames:
-      - app.intercom.com
-      - app.intercom.io
+    hostnames: *intercom_app
     paths:
       - /workflows/
       - /workflow/
@@ -27,9 +56,7 @@ rules:
     notes: Intercom workflow builder URLs
 
   - url_type: custom_action
-    hostnames:
-      - app.intercom.com
-      - app.intercom.io
+    hostnames: *intercom_app
     paths:
       - /custom-action
       - /actions/
@@ -38,9 +65,7 @@ rules:
     notes: Intercom custom action URLs
 
   - url_type: article
-    hostnames:
-      - app.intercom.com
-      - app.intercom.io
+    hostnames: *intercom_app
     paths:
       - /articles/
       - /article/

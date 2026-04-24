@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 import yaml
 
 from backend.models import UrlType
 
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "url_patterns.yaml"
+
+_STANDALONE_PARAMS = {"standalone", "overview"}
 
 
 class UrlCategorizer:
@@ -20,20 +22,37 @@ class UrlCategorizer:
         parsed = urlparse(url)
         hostname = parsed.hostname or ""
         path = parsed.path or ""
+        query = parse_qs(parsed.query)
+
+        # standalone=1 or overview=1 on any Intercom app domain → excluded
+        is_intercom_app = hostname.startswith("app.") and ("intercom.com" in hostname or "intercom.io" in hostname)
+        if is_intercom_app:
+            if any(param in query for param in _STANDALONE_PARAMS):
+                if any(p in path for p in ("-overview", "/overview", "/home")):
+                    return UrlType.EXCLUDED.value
 
         for rule in self._rules:
             hostnames: list[str] = rule.get("hostnames") or []
             paths: list[str] = rule.get("paths") or []
+            url_type = rule["url_type"]
 
             hostname_match = any(h in hostname for h in hostnames)
             path_match = any(p in path for p in paths)
 
+            # Excluded rules require BOTH hostname and path to match
+            if url_type == "excluded":
+                if hostname_match and path_match:
+                    return url_type
+                continue
+
             if hostnames and hostname_match:
-                return rule["url_type"]
+                if paths and path_match:
+                    return url_type
+                if not paths:
+                    return url_type
             if paths and path_match:
-                return rule["url_type"]
-            # Catch-all: empty hostnames and empty paths means match everything
+                return url_type
             if not hostnames and not paths:
-                return rule["url_type"]
+                return url_type
 
         return UrlType.OTHER.value

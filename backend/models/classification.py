@@ -22,6 +22,7 @@ class UrlType(str, Enum):
     LOOM = "loom"
     GITHUB = "github"
     OTHER = "other"
+    EXCLUDED = "excluded"
 
 
 class ContextReason(str, Enum):
