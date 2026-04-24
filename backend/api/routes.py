@@ -203,11 +203,6 @@ def _build_canvas(
 
     components.append({
         "type": "text",
-        "text": summary,
-    })
-
-    components.append({
-        "type": "text",
         "text": (
             f"\U0001f7e2 {summary.working_count} | "
             f"\U0001f7e2 {summary.broken_count} | "
