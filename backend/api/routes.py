@@ -255,18 +255,6 @@ def _build_canvas(
 
     # for btn in filter_buttons:
     #     components.append(btn)
-    components.append({
-        "type": "text",
-        "text": (
-            f" # | "
-            f" type | "
-            f" id | "
-            f"Admin | "
-            f"App | "
-            f"Con"
-        ),
-    })
-
     components.append({"type": "divider"})
 
     if not response.links:
@@ -279,7 +267,6 @@ def _build_canvas(
     intercom_links = [l for l in response.links if l.url_type != "other"]
     other_links = [l for l in response.links if l.url_type == "other"]
 
-    # Intercom links grouped by status
     if intercom_links:
         grouper = Grouper()
         _, intercom_groups = grouper.group_by_status(intercom_links)
@@ -294,46 +281,62 @@ def _build_canvas(
             ),
         )
 
-        for i, group in enumerate(ordered_groups):
-            for j, link in enumerate(group.items):
+        for group in ordered_groups:
+            status_icon = _STATUS_ICON.get(group.example_status, "\U00002753")
+            status_label = group.example_status.replace("_", " ").title()
+            components.append({
+                "type": "text",
+                "text": f"{status_icon} *{status_label}*",
+            })
+
+            list_items: list[dict[str, Any]] = []
+            for link in group.items:
                 link_url = link.url
                 path = urlparse(link_url).path
-                item_id = path.split('/')[-1] if path.split('/') else ""
+                item_id = path.split("/")[-1] if path.split("/") else ""
                 admin_url = build_admin_url(link_url, link.url_type)
-                status_icon = _STATUS_ICON.get(link.example_status, "\u2753")
+                type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
+                type_label = link.url_type.replace("_", " ").title()
                 confidence_pct = f"{link.confidence:.0%}"
 
-                admin_link = f"[admin]({admin_url})" if admin_url else ""
-                type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
-                components.append({
-                    "type": "text",
-                    "text": (f" {j+1} | "
-                             f"{status_icon} {type_icon} | "
-                             f"{item_id} | "
-                             f"[app]({link_url}) | "
-                             f"{admin_link} | "
-                             f"{confidence_pct}"),
+                subtitle_parts = [f"{confidence_pct} confidence"]
+                if admin_url:
+                    subtitle_parts.append(f"[Admin]({admin_url})")
+                subtitle_parts.append(f"[Open in app]({link_url})")
+
+                list_items.append({
+                    "type": "item",
+                    "id": f"link-{link.message_id}-{item_id}",
+                    "title": f"{type_icon} {type_label} {item_id}",
+                    "subtitle": "  \u00b7  ".join(subtitle_parts),
+                    "action": {"type": "url", "url": link_url},
                 })
 
-            if i < len(ordered_groups) - 1:
-                components.append({"type": "divider"})
+            components.append({"type": "list", "items": list_items})
+            components.append({"type": "spacer", "size": "s"})
 
-    # Other (external) links section
     if other_links:
         components.append({"type": "divider"})
         components.append({
             "type": "text",
-            "text": f"*Other Links ({len(other_links)})*",
+            "text": f"\U0001f517 *Other Links*",
         })
-        for j, link in enumerate(other_links):
-            truncated_url = (link.url[:57] + "...") if len(link.url) > 60 else link.url
+
+        list_items = []
+        for link in other_links:
             hostname = urlparse(link.url).hostname or ""
-            type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
-            components.append({
-                "type": "text",
-                "text": f" {j+1} | {type_icon} {hostname} | [{truncated_url}]({link.url})",
+            truncated_url = (link.url[:50] + "...") if len(link.url) > 53 else link.url
+            list_items.append({
+                "type": "item",
+                "id": f"other-{link.message_id}",
+                "title": hostname,
+                "subtitle": truncated_url,
+                "action": {"type": "url", "url": link.url},
             })
 
+        components.append({"type": "list", "items": list_items})
+
+    components.append({"type": "spacer", "size": "m"})
     components.append({
         "type": "button",
         "label": "Refresh",
