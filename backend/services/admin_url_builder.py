@@ -19,12 +19,19 @@ def _detect_region(hostname: str) -> str:
 
 
 def _extract_app_id(path_parts: list[str]) -> str | None:
-    try:
-        apps_idx = path_parts.index("apps")
-        if apps_idx + 1 < len(path_parts):
-            return path_parts[apps_idx + 1]
-    except ValueError:
-        pass
+    # Standard format: /a/apps/{app_id}/...
+    # Inbox format:    /a/inbox/{app_id}/...
+    for prefix in ("apps", "inbox"):
+        try:
+            idx = path_parts.index(prefix)
+            if idx + 1 < len(path_parts):
+                candidate = path_parts[idx + 1]
+                # "inbox" appears twice in inbox URLs — the app_id is the
+                # non-keyword segment immediately after the first match
+                if candidate not in ("admin", "inbox", "conversation", "conversations"):
+                    return candidate
+        except ValueError:
+            continue
     return None
 
 
