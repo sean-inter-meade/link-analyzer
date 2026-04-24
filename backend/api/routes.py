@@ -36,6 +36,17 @@ _STATUS_ICON = {
     "neutral_or_unknown": "\U00002753",
 }
 
+_TYPE_ICON = {
+    "conversation": "\U0001f4ac",
+    "workflow": "⚙️",
+    "custom_action": "⚡",
+    "article": "\U0001f4c4",
+    "help_center": "\U0001f4d6",
+    "loom": "\U0001f3ac",
+    "github": "\U0001f4e6",
+    "other": "\U0001f517",
+}
+
 
 def _get_provider() -> IntercomApiConversationProvider:
     return IntercomApiConversationProvider()
@@ -293,10 +304,11 @@ def _build_canvas(
                 confidence_pct = f"{link.confidence:.0%}"
 
                 admin_link = f"[admin]({admin_url})" if admin_url else ""
+                type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
                 components.append({
                     "type": "text",
                     "text": (f" {j+1} | "
-                             f"{status_icon} | "
+                             f"{status_icon} {type_icon} | "
                              f"{item_id} | "
                              f"[app]({link_url}) | "
                              f"{admin_link} | "
@@ -311,14 +323,15 @@ def _build_canvas(
         components.append({"type": "divider"})
         components.append({
             "type": "text",
-            "text": f"**Other Links ({len(other_links)})**",
+            "text": f"*Other Links ({len(other_links)})*",
         })
         for j, link in enumerate(other_links):
             truncated_url = (link.url[:57] + "...") if len(link.url) > 60 else link.url
             hostname = urlparse(link.url).hostname or ""
+            type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
             components.append({
                 "type": "text",
-                "text": f" {j+1} | {hostname} | [{truncated_url}]({link.url})",
+                "text": f" {j+1} | {type_icon} {hostname} | [{truncated_url}]({link.url})",
             })
 
     components.append({
@@ -377,16 +390,25 @@ async def canvas_initialize(body: dict[str, Any]) -> dict[str, Any]:
 
 @router.post("/canvas/submit")
 async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
+    logger.info("Canvas submit payload: %s", body)
+
     conversation_id = _extract_conversation_id(body)
     if not conversation_id:
         return _error_canvas("Error: No conversation_id found in payload.")
 
-    clicked = body.get("component_id", "")
+    clicked = (
+        body.get("component_id")
+        or body.get("id")
+        or body.get("input_values", {}).get("component_id")
+        or ""
+    )
+    logger.info("Submit clicked=%s conversation=%s", clicked, conversation_id)
 
     if clicked == "refresh":
         _cache.invalidate(conversation_id)
 
-    active_filters: set[str] = set(body.get("current_filters", []))
+    stored = body.get("stored_data", {})
+    active_filters: set[str] = set(stored.get("current_filters", []))
 
     all_filter_ids = set(FILTER_OPTIONS) | set(AUTHOR_FILTERS) | set(URL_TYPE_FILTERS)
     if clicked in all_filter_ids:
