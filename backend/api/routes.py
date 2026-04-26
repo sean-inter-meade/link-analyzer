@@ -33,7 +33,7 @@ _cache = AnalysisCache()
 _STATUS_ICON = {
     "working_example": "\U0001f7e2",
     "broken_example": "\U0001f534",
-    "neutral_or_unknown": "\U00002753",
+    "unknown_or_neutral": "\U00002753",
 }
 
 _TYPE_ICON = {
@@ -138,7 +138,7 @@ def _analyze_conversation(conversation_id: str) -> AnalysisResponse:
 FILTER_OPTIONS = {
     "broken_only": "broken_example",
     "working_only": "working_example",
-    "unknown_only": "neutral_or_unknown",
+    "unknown_only": "unknown_or_neutral",
 }
 
 AUTHOR_FILTERS = {
@@ -212,14 +212,14 @@ def _build_canvas(
 
     summary = response.summary
 
-    components.append({
-        "type": "text",
-        "text": (
-            f"\U0001f7e2 Work {summary.working_count} | "
-            f"\U0001f534 Broken {summary.broken_count} | "
-            f"\U00002753 Unknown {summary.unknown_count}"
-        ),
-    })
+    # components.append({
+    #     "type": "text",
+    #     "text": (
+    #         f"\U0001f7e2 Work {summary.working_count} | "
+    #         f"\U0001f534 Broken {summary.broken_count} | "
+    #         f"\U00002753 Unknown {summary.unknown_count}"
+    #     ),
+    # })
 
     if response.problem_summary:
         truncated = response.problem_summary
@@ -269,7 +269,7 @@ def _build_canvas(
         grouper = Grouper()
         _, intercom_groups = grouper.group_by_status(intercom_links)
 
-        status_order = ["broken_example", "working_example", "neutral_or_unknown"]
+        status_order = ["broken_example", "working_example", "unknown_or_neutral"]
         ordered_groups = sorted(
             intercom_groups,
             key=lambda g: (
@@ -284,7 +284,7 @@ def _build_canvas(
             status_label = group.example_status.replace("_", " ").title()
             components.append({
                 "type": "text",
-                "text": f"{status_icon} *{status_label}* ({summary[i]})",
+                "text": f"{status_icon} *{status_label}* ({summary.example_status})",
             })
             components.append({"type": "spacer", "size": "xs"})
 
