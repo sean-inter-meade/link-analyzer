@@ -63,39 +63,37 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     if url_type == "conversation":
         item_id = _find_resource_id(parts, "conversations") or _find_resource_id(parts, "conversation")
         if item_id:
-            return f"{admin_base}/conversations?app_id={app_id}&conversation_id={item_id}"
+            return f"{admin_base}/conversations/{app_id}/{item_id}"
 
     if url_type == "workflow":
         item_id = _find_resource_id(parts, "workflows") or _find_resource_id(parts, "custom-bots")
         if item_id:
-            return f"{admin_base}/workflows?app_id={app_id}&workflow_id={item_id}"
+            return f"{admin_base}/rulesets/{item_id}"
 
     if url_type == "custom_action":
         item_id = _find_resource_id(parts, "actions") or _find_resource_id(parts, "custom-action") or _find_resource_id(parts, "custom_actions")
         if item_id:
-            return f"{admin_base}/custom_actions?app_id={app_id}&custom_action_id={item_id}"
+            return f"{admin_base}/custom_actions/{item_id}?app_id={app_id}"
 
     if url_type == "article":
         item_id = _find_resource_id(parts, "articles")
         if item_id:
-            return f"{admin_base}/articles?app_id={app_id}&article_id={item_id}"
+            return f"{admin_base}/articles/{item_id}"
 
     if url_type == "help_center":
         item_id = _find_resource_id(parts, "articles")
         if item_id:
-            return f"{admin_base}/articles?app_id={app_id}&article_id={item_id}"
+            return f"{admin_base}/articles/{item_id}"
 
     # Resource types beyond the url_type enum — detected from path structure
-    for resource, param in [
-        ("procedures", "procedure_id"),
-        ("series", "series_id"),
-        ("reports", "report_id"),
-        ("users", "user_id"),
-        ("companies", "company_id"),
-    ]:
+    procedure_id = _find_resource_id(parts, "procedures")
+    if procedure_id:
+        return f"{admin_base}/fin_procedures/{procedure_id}?app_id={app_id}"
+
+    for resource in ("series", "reports", "users", "companies"):
         item_id = _find_resource_id(parts, resource)
         if item_id:
-            return f"{admin_base}/{resource}?app_id={app_id}&{param}={item_id}"
+            return f"{admin_base}/{resource}/{item_id}"
 
     # Outbound: messages, tours, custom-bots, posts, etc.
     if "outbound" in parts:
@@ -119,7 +117,7 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
         operator_idx = parts.index("operator")
         remaining = parts[operator_idx + 1:]
         if len(remaining) >= 2:
-            return f"{admin_base}/workflows?app_id={app_id}&workflow_id={remaining[1]}"
+            return f"{admin_base}/rulesets/{remaining[1]}"
         elif len(remaining) >= 1:
             return f"{admin_base}/operator/{remaining[0]}?app_id={app_id}"
 
