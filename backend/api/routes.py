@@ -284,7 +284,7 @@ def _build_canvas(
             status_label = group.example_status.replace("_", " ").title()
             components.append({
                 "type": "text",
-                "text": f"{status_icon} *{status_label}* ({summary.example_status})",
+                "text": f"{status_icon} *{status_label}* ({summary[group.example_status]})",
             })
             components.append({"type": "spacer", "size": "xs"})
 
