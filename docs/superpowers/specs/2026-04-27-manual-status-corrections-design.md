@@ -107,7 +107,7 @@ When a user clicks a link row, the submit handler returns a detail canvas:
 - Three buttons: "Mark as Working", "Mark as Broken", "Mark as Unknown".
 - A "Back" button to return to the main view.
 
-Each status button has `component_id = "set_status:<url>:<new_status>"`.
+Each status button has `component_id = "set_status:<new_status>:<url>"` (status before URL to avoid ambiguity when splitting, since URLs contain colons).
 
 ### Admin identity extraction
 
