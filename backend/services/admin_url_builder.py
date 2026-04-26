@@ -10,8 +10,8 @@ _ADMIN_BASES = {
 }
 
 _OUTBOUND_SUBTYPE_KEYWORDS = (
-    "tour", "email", "chat", "push", "checklists", "sms",
-    "carousel", "custom-bot", "broadcast", "discord-broadcast",
+    "tour", "email", "chat", "post", "push", "checklists", "sms",
+    "survey", "carousel", "custom-bot", "broadcast", "discord-broadcast",
     "tooltips", "whatsapp", "news-items",
 )
 

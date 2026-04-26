@@ -63,6 +63,52 @@ _TYPE_ICON = {
     "other": "\U0001f517",
 }
 
+_OUTBOUND_SUBTYPE_ICON = {
+    "tour": "\U0001f9ed",
+    "email": "\U00002709",
+    "chat": "\U0001f4ac",
+    "post": "\U0001f4cc",
+    "push": "\U0001f514",
+    "checklists": "\U00002611",
+    "sms": "\U0001f4f1",
+    "survey": "\U0001f4cb",
+    "carousel": "\U0001f3a0",
+    "custom-bot": "\U0001f916",
+    "broadcast": "\U0001f4e2",
+    "discord-broadcast": "\U0001f4e2",
+    "tooltips": "\U0001f4a1",
+    "whatsapp": "\U0001f4f2",
+    "news-items": "\U0001f4f0",
+    "news": "\U0001f4f0",
+}
+
+_RESOURCE_ID_KEYWORDS = ("users", "companies", "folder")
+_ID_LIKE_RE = __import__("re").compile(r"^[0-9a-f]{16,}$|^\d+$")
+
+
+def _extract_display_id(path_segments: list[str], url_type: str) -> str:
+    for keyword in _RESOURCE_ID_KEYWORDS:
+        if keyword in path_segments:
+            idx = path_segments.index(keyword)
+            if idx + 1 < len(path_segments):
+                return path_segments[idx + 1]
+    numeric = next((seg for seg in reversed(path_segments) if seg.isdigit()), None)
+    if numeric:
+        return numeric
+    hex_id = next((seg for seg in reversed(path_segments) if _ID_LIKE_RE.match(seg)), None)
+    if hex_id:
+        return hex_id
+    return path_segments[-1] if path_segments else ""
+
+
+def _outbound_subtype_icon(path_segments: list[str]) -> str:
+    if "outbound" in path_segments:
+        idx = path_segments.index("outbound")
+        if idx + 1 < len(path_segments):
+            subtype = path_segments[idx + 1]
+            return _OUTBOUND_SUBTYPE_ICON.get(subtype, "")
+    return ""
+
 
 def _get_provider() -> IntercomApiConversationProvider:
     return _provider
@@ -308,12 +354,13 @@ def _build_canvas(
                 link_url = link.url
                 path = urlparse(link_url).path
                 path_segments = path.strip("/").split("/") if path else []
-                item_id = next(
-                    (seg for seg in reversed(path_segments) if seg.isdigit()),
-                    path_segments[-1] if path_segments else "",
-                )
+                item_id = _extract_display_id(path_segments, link.url_type)
                 admin_url = build_admin_url(link_url, link.url_type)
                 type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
+                if link.url_type == "outbound":
+                    sub_icon = _outbound_subtype_icon(path_segments)
+                    if sub_icon:
+                        type_icon = f"{type_icon}{sub_icon}"
                 type_label = link.url_type.replace("_", " ").title()
                 confidence_pct = f"{link.confidence:.0%}"
 

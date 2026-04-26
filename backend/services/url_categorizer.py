@@ -24,12 +24,9 @@ class UrlCategorizer:
         path = parsed.path or ""
         query = parse_qs(parsed.query)
 
-        # standalone=1 or overview=1 on any Intercom app domain → excluded
         is_intercom_app = hostname.startswith("app.") and ("intercom.com" in hostname or "intercom.io" in hostname)
-        if is_intercom_app:
-            if any(param in query for param in _STANDALONE_PARAMS):
-                if any(p in path for p in ("-overview", "/overview", "/home")):
-                    return UrlType.EXCLUDED.value
+        if is_intercom_app and "overview" in path:
+            return UrlType.EXCLUDED.value
 
         for rule in self._rules:
             hostnames: list[str] = rule.get("hostnames") or []
