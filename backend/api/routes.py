@@ -313,10 +313,9 @@ def _build_canvas(
                 # })
                 components.append({"type": "spacer", "size": "xs"})
 
-            components.append({"type": "spacer", "size": "s"})
+            components.append({"type": "divider"})
 
     if other_links:
-        components.append({"type": "divider"})
         components.append({
             "type": "text",
             "text": "\U0001f517 *Other Links*",
