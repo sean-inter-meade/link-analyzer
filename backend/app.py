@@ -9,7 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.api.routes import router
-from backend.config.settings import RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
+from backend.config.settings import (
+    RATE_LIMIT_REQUESTS,
+    RATE_LIMIT_WINDOW_SECONDS,
+    USE_TRANSFORMER,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -69,3 +73,10 @@ async def on_startup() -> None:
         RATE_LIMIT_REQUESTS,
         RATE_LIMIT_WINDOW_SECONDS,
     )
+    if USE_TRANSFORMER:
+        logger.info("Preloading transformer model (USE_TRANSFORMER=true)...")
+        from backend.classifiers.transformer_classifier import TransformerClassifier
+
+        classifier = TransformerClassifier()
+        loaded = classifier._ensure_loaded()
+        logger.info("Transformer model preloaded: %s", loaded)
