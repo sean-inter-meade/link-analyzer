@@ -32,7 +32,7 @@ _cache = AnalysisCache()
 
 _STATUS_ICON = {
     "working_example": "\U0001f7e2",
-    "broken_example": "\U000026a0",
+    "broken_example": "\U0001f534",
     "neutral_or_unknown": "\U00002753",
 }
 
@@ -216,7 +216,7 @@ def _build_canvas(
         "type": "text",
         "text": (
             f"\U0001f7e2 Work {summary.working_count} | "
-            f"\U000026a0 Broken {summary.broken_count} | "
+            f"\U0001f534 Broken {summary.broken_count} | "
             f"\U00002753 Unknown {summary.unknown_count}"
         ),
     })
@@ -229,8 +229,6 @@ def _build_canvas(
             "type": "text",
             "text": f"*Problem:* {truncated}",
         })
-
-    components.append({"type": "divider"})
 
     # current_filters = active_filters or set()
     # filter_buttons: list[dict[str, Any]] = []
@@ -281,12 +279,12 @@ def _build_canvas(
             ),
         )
 
-        for group in ordered_groups:
+        for i, group in enumerate(ordered_groups):
             status_icon = _STATUS_ICON.get(group.example_status, "\U00002753")
             status_label = group.example_status.replace("_", " ").title()
             components.append({
                 "type": "text",
-                "text": f"{status_icon} *{status_label}*",
+                "text": f"{status_icon} *{status_label}* ({summary[i]})",
             })
             components.append({"type": "spacer", "size": "xs"})
 
@@ -301,17 +299,17 @@ def _build_canvas(
 
                 components.append({
                     "type": "text",
-                    "text": f"{type_icon} *{type_label}* {item_id} \u2014 {confidence_pct}",
+                    "text": f"{type_icon} *{type_label}* [{item_id}]({admin_url}) \u2014 {confidence_pct} - [app]({link_url})",
                 })
 
-                link_parts = [f"[Open in app]({link_url})"]
-                if admin_url:
-                    link_parts.append(f"[Admin]({admin_url})")
-                components.append({
-                    "type": "text",
-                    "text": "  \u00b7  ".join(link_parts),
-                    "style": "muted",
-                })
+                # link_parts = [f"[app]({link_url})"]
+                # if admin_url:
+                #     link_parts.append(f"[Admin]({admin_url})")
+                # components.append({
+                #     "type": "text",
+                #     "text": "  \u00b7  ".join(link_parts),
+                #     "style": "muted",
+                # })
                 components.append({"type": "spacer", "size": "xs"})
 
             components.append({"type": "spacer", "size": "s"})
