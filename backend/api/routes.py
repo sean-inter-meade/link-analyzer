@@ -300,7 +300,7 @@ def _build_canvas(
 
                 components.append({
                     "type": "text",
-                    "text": f"{type_icon} *{type_label}* [{item_id}]({admin_url}) \u2014 {confidence_pct} - [app]({link_url})",
+                    "text": f"{type_icon} [{item_id}]({admin_url}) ([app]({link_url}) \u2014 {confidence_pct})",
                 })
 
                 # link_parts = [f"[app]({link_url})"]
