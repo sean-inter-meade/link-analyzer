@@ -40,6 +40,7 @@ _TYPE_ICON = {
     "conversation": "\U0001f4ac",
     "workflow": "⚙️",
     "custom_action": "⚡",
+    "procedure": "\U0001f9ea",
     "article": "\U0001f4c4",
     "help_center": "\U0001f4d6",
     "loom": "\U0001f3ac",
