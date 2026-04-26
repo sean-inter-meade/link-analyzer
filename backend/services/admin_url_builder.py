@@ -150,7 +150,7 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     if url_type == "user":
         item_id = _find_resource_id(parts, "users")
         if item_id:
-            return f"{admin_base}/users/{item_id}?app_id={app_id}"
+            return f"{admin_base}/users?app_id={app_id}&intercom_id={item_id}&button="
 
     if url_type == "company":
         item_id = _find_resource_id(parts, "companies")
