@@ -45,14 +45,16 @@ class UrlCategorizer:
                     return url_type
                 continue
 
-            if hostnames and hostname_match:
-                if paths and path_match:
+            if hostnames and paths:
+                if hostname_match and path_match:
                     return url_type
-                if not paths:
+            elif hostnames:
+                if hostname_match:
                     return url_type
-            if paths and path_match:
-                return url_type
-            if not hostnames and not paths:
+            elif paths:
+                if path_match:
+                    return url_type
+            else:
                 return url_type
 
         return UrlType.OTHER.value

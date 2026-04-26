@@ -54,21 +54,68 @@ rules:
       - /operator/workflows
     notes: Intercom workflow builder URLs
 
-  - url_type: custom_action
-    hostnames: *intercom_app
-    paths:
-      - /custom-action
-      - /actions/
-      - /custom_actions/
-      - /platform/actions
-    notes: Intercom custom action URLs
-
   - url_type: procedure
     hostnames: *intercom_app
     paths:
       - /procedures/
       - /fin-ai-agent/procedures
     notes: Fin AI agent procedure URLs
+
+  - url_type: guidance
+    hostnames: *intercom_app
+    paths:
+      - /guidance/
+      - /fin-ai-agent/guidance
+    notes: Fin AI agent guidance URLs
+
+  - url_type: custom_action
+    hostnames: *intercom_app
+    paths:
+      - /custom-action
+      - /custom_actions/
+      - /actions/
+      - /platform/actions
+    notes: Intercom custom action URLs
+
+  - url_type: knowledge_hub
+    hostnames: *intercom_app
+    paths:
+      - /knowledge-hub/
+    notes: Knowledge hub content (folders, external content)
+
+  - url_type: series
+    hostnames: *intercom_app
+    paths:
+      - /outbound/series/
+    notes: Outbound series (must be before generic outbound)
+
+  - url_type: outbound
+    hostnames: *intercom_app
+    paths:
+      - /outbound/
+    notes: >
+      All outbound content types — tours, emails, chats, posts, push,
+      checklists, SMS, surveys, carousels, custom-bots, broadcasts,
+      tooltips, whatsapp, news items, discord broadcasts.
+      These are all rulesets internally.
+
+  - url_type: report
+    hostnames: *intercom_app
+    paths:
+      - /reports/
+    notes: Intercom reports and custom reports
+
+  - url_type: user
+    hostnames: *intercom_app
+    paths:
+      - /users/
+    notes: Intercom user profile URLs
+
+  - url_type: company
+    hostnames: *intercom_app
+    paths:
+      - /companies/
+    notes: Intercom company profile URLs
 
   - url_type: article
     hostnames: *intercom_app

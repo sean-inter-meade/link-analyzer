@@ -1,13 +1,21 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 _ADMIN_BASES = {
     "us": "https://intercomrades.intercom.com/admin",
     "eu": "https://intercomrades.eu.intercom.com/admin",
     "au": "https://intercomrades.au.intercom.com/admin",
 }
+
+_OUTBOUND_SUBTYPE_KEYWORDS = (
+    "tour", "email", "chat", "push", "checklists", "sms",
+    "carousel", "custom-bot", "broadcast", "discord-broadcast",
+    "tooltips", "whatsapp", "news-items",
+)
+
+_ID_RE = re.compile(r"^\d+$")
 
 
 def _detect_region(hostname: str) -> str:
@@ -35,6 +43,17 @@ def _extract_app_id(path_parts: list[str]) -> str | None:
     return None
 
 
+def _find_numeric_id(path_parts: list[str], after_keyword: str) -> str | None:
+    try:
+        idx = path_parts.index(after_keyword)
+        for candidate in path_parts[idx + 1:]:
+            if _ID_RE.match(candidate):
+                return candidate
+    except ValueError:
+        pass
+    return None
+
+
 def _find_resource_id(path_parts: list[str], after_keyword: str) -> str | None:
     try:
         idx = path_parts.index(after_keyword)
@@ -52,6 +71,7 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     path = parsed.path.strip("/")
     parts = path.split("/")
     hostname = parsed.hostname or ""
+    query = parse_qs(parsed.query)
 
     app_id = _extract_app_id(parts)
     if not app_id:
@@ -71,14 +91,24 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
             return f"{admin_base}/rulesets/{item_id}"
 
     if url_type == "custom_action":
-        item_id = _find_resource_id(parts, "actions") or _find_resource_id(parts, "custom-action") or _find_resource_id(parts, "custom_actions")
+        item_id = (
+            _find_resource_id(parts, "custom-action")
+            or _find_resource_id(parts, "custom_actions")
+            or _find_numeric_id(parts, "custom-actions")
+            or _find_resource_id(parts, "actions")
+        )
         if item_id:
             return f"{admin_base}/custom_actions/{item_id}?app_id={app_id}"
 
     if url_type == "procedure":
-        item_id = _find_resource_id(parts, "procedures")
+        item_id = _find_numeric_id(parts, "procedures")
         if item_id:
             return f"{admin_base}/fin_procedures/{item_id}?app_id={app_id}"
+
+    if url_type == "guidance":
+        item_id = _find_numeric_id(parts, "guidance")
+        if item_id:
+            return f"{admin_base}/rulesets/{item_id}"
 
     if url_type == "article":
         item_id = _find_resource_id(parts, "articles")
@@ -90,26 +120,42 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
         if item_id:
             return f"{admin_base}/articles/{item_id}"
 
-    # Resource types beyond the url_type enum — detected from path structure
-    procedure_id = _find_resource_id(parts, "procedures")
-    if procedure_id:
-        return f"{admin_base}/fin_procedures/{procedure_id}?app_id={app_id}"
+    if url_type == "knowledge_hub":
+        content_id = query.get("activeContentId", [None])[0]
+        if content_id:
+            return f"{admin_base}/knowledge-hub?app_id={app_id}&activeContentId={content_id}"
+        folder_id = _find_resource_id(parts, "folder")
+        if folder_id:
+            return f"{admin_base}/knowledge-hub/folder/{folder_id}?app_id={app_id}"
 
-    for resource in ("series", "reports", "users", "companies"):
-        item_id = _find_resource_id(parts, resource)
+    if url_type == "outbound":
+        for keyword in _OUTBOUND_SUBTYPE_KEYWORDS:
+            item_id = _find_numeric_id(parts, keyword)
+            if item_id:
+                return f"{admin_base}/rulesets/{item_id}"
+        if "all" in parts:
+            return f"{admin_base}/outbound/all?app_id={app_id}"
+
+    if url_type == "series":
+        item_id = _find_numeric_id(parts, "series")
         if item_id:
-            return f"{admin_base}/{resource}/{item_id}"
+            return f"{admin_base}/rulesets/{item_id}"
 
-    # Outbound: messages, tours, custom-bots, posts, etc.
-    if "outbound" in parts:
-        outbound_idx = parts.index("outbound")
-        remaining = parts[outbound_idx + 1:]
-        if len(remaining) >= 2:
-            outbound_type = remaining[0]
-            outbound_id = remaining[1]
-            return f"{admin_base}/outbound/{outbound_type}?app_id={app_id}&id={outbound_id}"
-        elif len(remaining) == 1:
-            return f"{admin_base}/outbound?app_id={app_id}"
+    if url_type == "report":
+        item_id = _find_numeric_id(parts, "report")
+        if item_id:
+            return f"{admin_base}/reports/{item_id}?app_id={app_id}"
+        return f"{admin_base}/reports?app_id={app_id}"
+
+    if url_type == "user":
+        item_id = _find_resource_id(parts, "users")
+        if item_id:
+            return f"{admin_base}/users/{item_id}?app_id={app_id}"
+
+    if url_type == "company":
+        item_id = _find_resource_id(parts, "companies")
+        if item_id:
+            return f"{admin_base}/companies/{item_id}?app_id={app_id}"
 
     # Settings pages — no resource ID, just link to the settings section
     if "settings" in parts:

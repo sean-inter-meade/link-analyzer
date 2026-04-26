@@ -49,6 +49,13 @@ _TYPE_ICON = {
     "workflow": "⚙️",
     "custom_action": "⚡",
     "procedure": "\U0001f9ea",
+    "guidance": "\U0001f9ed",
+    "outbound": "\U0001f4e4",
+    "knowledge_hub": "\U0001f4da",
+    "series": "\U0001f504",
+    "report": "\U0001f4ca",
+    "user": "\U0001f464",
+    "company": "\U0001f3e2",
     "article": "\U0001f4c4",
     "help_center": "\U0001f4d6",
     "loom": "\U0001f3ac",
@@ -300,7 +307,11 @@ def _build_canvas(
             for link in group.items:
                 link_url = link.url
                 path = urlparse(link_url).path
-                item_id = path.split("/")[-1] if path.split("/") else ""
+                path_segments = path.strip("/").split("/") if path else []
+                item_id = next(
+                    (seg for seg in reversed(path_segments) if seg.isdigit()),
+                    path_segments[-1] if path_segments else "",
+                )
                 admin_url = build_admin_url(link_url, link.url_type)
                 type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
                 type_label = link.url_type.replace("_", " ").title()
