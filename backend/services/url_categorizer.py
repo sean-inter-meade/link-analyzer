@@ -25,8 +25,11 @@ class UrlCategorizer:
         query = parse_qs(parsed.query)
 
         is_intercom_app = hostname.startswith("app.") and ("intercom.com" in hostname or "intercom.io" in hostname)
-        if is_intercom_app and "overview" in path:
-            return UrlType.EXCLUDED.value
+        if is_intercom_app:
+            if "overview" in path:
+                return UrlType.EXCLUDED.value
+            if "selectedObjectTypes" in query:
+                return UrlType.EXCLUDED.value
 
         for rule in self._rules:
             hostnames: list[str] = rule.get("hostnames") or []
