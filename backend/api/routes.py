@@ -279,12 +279,13 @@ def _build_canvas(
             ),
         )
 
-        for i, group in enumerate(ordered_groups):
+        for group in ordered_groups:
             status_icon = _STATUS_ICON.get(group.example_status, "\U00002753")
             status_label = group.example_status.replace("_", " ").title()
+
             components.append({
                 "type": "text",
-                "text": f"{status_icon} *{status_label}* ({summary[group.example_status]})",
+                "text": f"{status_icon} *{status_label}* ({len(group)})",
             })
             components.append({"type": "spacer", "size": "xs"})
 
