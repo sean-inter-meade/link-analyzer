@@ -18,6 +18,7 @@ class UrlType(str, Enum):
     WORKFLOW = "workflow"
     CUSTOM_ACTION = "custom_action"
     ARTICLE = "article"
+    PROCEDURE = "procedure"
     HELP_CENTER = "help_center"
     LOOM = "loom"
     GITHUB = "github"

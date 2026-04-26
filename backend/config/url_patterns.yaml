@@ -63,6 +63,13 @@ rules:
       - /platform/actions
     notes: Intercom custom action URLs
 
+  - url_type: procedure
+    hostnames: *intercom_app
+    paths:
+      - /procedures/
+      - /fin-ai-agent/procedures
+    notes: Fin AI agent procedure URLs
+
   - url_type: article
     hostnames: *intercom_app
     paths:

@@ -63,7 +63,7 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     if url_type == "conversation":
         item_id = _find_resource_id(parts, "conversations") or _find_resource_id(parts, "conversation")
         if item_id:
-            return f"{admin_base}/conversations/{app_id}/{item_id}"
+            return f"{admin_base}/conversations?app_id={app_id}&conversation_id={item_id}"
 
     if url_type == "workflow":
         item_id = _find_resource_id(parts, "workflows") or _find_resource_id(parts, "custom-bots")
@@ -74,6 +74,11 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
         item_id = _find_resource_id(parts, "actions") or _find_resource_id(parts, "custom-action") or _find_resource_id(parts, "custom_actions")
         if item_id:
             return f"{admin_base}/custom_actions/{item_id}?app_id={app_id}"
+
+    if url_type == "procedure":
+        item_id = _find_resource_id(parts, "procedures")
+        if item_id:
+            return f"{admin_base}/fin_procedures/{item_id}?app_id={app_id}"
 
     if url_type == "article":
         item_id = _find_resource_id(parts, "articles")
