@@ -30,6 +30,14 @@ router = APIRouter()
 
 _cache = AnalysisCache()
 
+_extractor = UrlExtractor()
+_categorizer = UrlCategorizer()
+_resolver = ContextResolver()
+_grouper = Grouper()
+_classifier = HybridClassifier(use_transformer=USE_TRANSFORMER)
+_summarizer = ProblemSummarizer()
+_provider = IntercomApiConversationProvider()
+
 _STATUS_ICON = {
     "working_example": "\U0001f7e2",
     "broken_example": "\U0001f534",
@@ -50,18 +58,18 @@ _TYPE_ICON = {
 
 
 def _get_provider() -> IntercomApiConversationProvider:
-    return IntercomApiConversationProvider()
+    return _provider
 
 
 def _run_pipeline(
     messages: list[ConversationMessage],
     conversation_id: str,
 ) -> AnalysisResponse:
-    extractor = UrlExtractor()
-    categorizer = UrlCategorizer()
-    resolver = ContextResolver()
-    classifier = HybridClassifier(use_transformer=USE_TRANSFORMER)
-    grouper = Grouper()
+    extractor = _extractor
+    categorizer = _categorizer
+    resolver = _resolver
+    classifier = _classifier
+    grouper = _grouper
 
     extracted_url_dicts = extractor.extract(messages)
     links: list[ExtractedLink] = []
@@ -111,8 +119,7 @@ def _run_pipeline(
 
     summary, groups = grouper.group_by_status(links)
 
-    summarizer = ProblemSummarizer()
-    problem_summary = summarizer.summarize(messages)
+    problem_summary = _summarizer.summarize(messages)
 
     return AnalysisResponse(
         conversation_id=conversation_id,
