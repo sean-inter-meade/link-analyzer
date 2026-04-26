@@ -313,7 +313,7 @@ def _build_canvas(
                 # })
                 components.append({"type": "spacer", "size": "xs"})
 
-        components.append({"type": "divider"})
+            components.append({"type": "divider"})
 
     if other_links:
         components.append({
