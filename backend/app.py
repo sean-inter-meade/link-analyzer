@@ -1,8 +1,30 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
+from pathlib import Path
 from typing import Any, Callable
+
+from backend.config.settings import USE_TRANSFORMER as _USE_TRANSFORMER
+
+if _USE_TRANSFORMER:
+    _project_root = Path(__file__).resolve().parent.parent
+    _candidate_caches = [
+        os.environ.get("HF_HOME"),
+        os.environ.get("TRANSFORMERS_CACHE"),
+        str(_project_root / ".cache" / "huggingface"),
+        str(Path.home() / ".cache" / "huggingface"),
+    ]
+    for _candidate in _candidate_caches:
+        if not _candidate:
+            continue
+        _model_dir = Path(_candidate) / "hub" / "models--valhalla--distilbart-mnli-12-1"
+        if _model_dir.exists():
+            os.environ.setdefault("HF_HOME", _candidate)
+            os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+            os.environ.setdefault("HF_HUB_OFFLINE", "1")
+            break
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
