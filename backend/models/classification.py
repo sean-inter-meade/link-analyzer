@@ -67,6 +67,7 @@ class ExtractedLink(BaseModel):
     example_status: str
     confidence: float
     signals: ClassificationSignals
+    corrected: bool = False
 
 
 class LinkGroup(BaseModel):
