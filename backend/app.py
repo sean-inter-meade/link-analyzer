@@ -32,6 +32,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.api.routes import router
 from backend.config.settings import (
+    INTERCOM_API_TOKEN,
     RATE_LIMIT_REQUESTS,
     RATE_LIMIT_WINDOW_SECONDS,
     USE_TRANSFORMER,
@@ -95,6 +96,14 @@ async def on_startup() -> None:
         RATE_LIMIT_REQUESTS,
         RATE_LIMIT_WINDOW_SECONDS,
     )
+    if not INTERCOM_API_TOKEN:
+        logger.error(
+            "INTERCOM_API_TOKEN is not set. Canvas requests will fail to fetch "
+            "conversations from Intercom. Set this secret in your environment "
+            "(both in the workspace and in the deployment) before using the app."
+        )
+    else:
+        logger.info("INTERCOM_API_TOKEN is configured.")
     if USE_TRANSFORMER:
         logger.info("Preloading transformer model (USE_TRANSFORMER=true)...")
         from backend.api.routes import _classifier
