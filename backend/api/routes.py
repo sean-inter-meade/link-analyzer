@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from typing import Any
 from urllib.parse import urlparse
 
@@ -135,12 +136,23 @@ def _run_pipeline(
 
     extracted_url_dicts = extractor.extract(messages)
     links: list[ExtractedLink] = []
+    seen_resource_ids: set[str] = set()
 
     for url_dict in extracted_url_dicts:
         url_type = categorizer.categorize(url_dict["url"])
         if url_type == "excluded":
             logger.info("Skipping excluded URL: %s", url_dict["url"])
             continue
+
+        path = urlparse(url_dict["url"]).path
+        path_segments = path.strip("/").split("/") if path else []
+        resource_id = _extract_display_id(path_segments, url_type)
+        dedup_key = f"{url_type}:{resource_id}"
+        if dedup_key in seen_resource_ids:
+            logger.info("Skipping duplicate resource: %s (%s)", dedup_key, url_dict["url"])
+            continue
+        seen_resource_ids.add(dedup_key)
+
         context = resolver.resolve(url_dict, messages)
         fallback_used = context["selected_context_reason"] in (
             "bare_url_fallback_to_previous",
@@ -394,34 +406,38 @@ def _build_canvas(
             })
             components.append({"type": "spacer", "size": "xs"})
 
+            type_buckets: dict[str, list[ExtractedLink]] = defaultdict(list)
             for link in group.items:
-                link_url = link.url
-                path = urlparse(link_url).path
-                path_segments = path.strip("/").split("/") if path else []
-                item_id = _extract_display_id(path_segments, link.url_type)
-                admin_url = build_admin_url(link_url, link.url_type)
-                type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
-                if link.url_type == "outbound":
-                    sub_icon = _outbound_subtype_icon(path_segments)
-                    if sub_icon:
-                        type_icon = f"{type_icon}{sub_icon}"
-                type_label = link.url_type.replace("_", " ").title()
-                confidence_pct = f"{link.confidence:.0%}"
+                type_buckets[link.url_type].append(link)
 
-                components.append({
-                    "type": "text",
-                    "text": f"{type_icon} [{item_id}]({admin_url}) [app]({link_url}) ({confidence_pct})",
-                })
+            for url_type, type_links in sorted(type_buckets.items()):
+                type_icon = _TYPE_ICON.get(url_type, "\U0001f517")
+                type_label = url_type.replace("_", " ").title()
+                if len(type_links) > 1:
+                    components.append({
+                        "type": "text",
+                        "text": f"{type_icon} *{type_label}* ({len(type_links)})",
+                    })
+                    components.append({"type": "spacer", "size": "xs"})
 
-                # link_parts = [f"[app]({link_url})"]
-                # if admin_url:
-                #     link_parts.append(f"[Admin]({admin_url})")
-                # components.append({
-                #     "type": "text",
-                #     "text": "  \u00b7  ".join(link_parts),
-                #     "style": "muted",
-                # })
-                components.append({"type": "spacer", "size": "xs"})
+                for link in type_links:
+                    link_url = link.url
+                    path = urlparse(link_url).path
+                    path_segments = path.strip("/").split("/") if path else []
+                    item_id = _extract_display_id(path_segments, link.url_type)
+                    admin_url = build_admin_url(link_url, link.url_type)
+                    link_type_icon = type_icon
+                    if link.url_type == "outbound":
+                        sub_icon = _outbound_subtype_icon(path_segments)
+                        if sub_icon:
+                            link_type_icon = f"{link_type_icon}{sub_icon}"
+                    confidence_pct = f"{link.confidence:.0%}"
+
+                    components.append({
+                        "type": "text",
+                        "text": f"{link_type_icon} [{item_id}]({admin_url}) [app]({link_url}) ({confidence_pct})",
+                    })
+                    components.append({"type": "spacer", "size": "xs"})
 
             components.append({"type": "divider"})
 

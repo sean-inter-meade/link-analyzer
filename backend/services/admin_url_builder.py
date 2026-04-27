@@ -98,7 +98,7 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
             or _find_resource_id(parts, "actions")
         )
         if item_id:
-            return f"{admin_base}/custom_actions/{item_id}?app_id={app_id}"
+            return f"{admin_base}/rulesets/{item_id}"
 
     if url_type == "procedure":
         item_id = _find_numeric_id(parts, "procedures")
@@ -108,7 +108,7 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     if url_type == "guidance":
         item_id = _find_numeric_id(parts, "guidance")
         if item_id:
-            return f"{admin_base}/rulesets/{item_id}"
+            return f"{admin_base}/fin_procedures?app_id={app_id}"
 
     if url_type == "article":
         item_id = _find_resource_id(parts, "articles")
@@ -123,10 +123,10 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     if url_type == "knowledge_hub":
         content_id = query.get("activeContentId", [None])[0]
         if content_id:
-            return f"{admin_base}/knowledge-hub?app_id={app_id}&activeContentId={content_id}"
+            return f"{admin_base}/content_library_folders?app_id={app_id}&activeContentId={content_id}"
         folder_id = _find_resource_id(parts, "folder")
         if folder_id:
-            return f"{admin_base}/knowledge-hub/folder/{folder_id}?app_id={app_id}"
+            return f"{admin_base}/content_library_folders/{folder_id}?app_id={app_id}"
 
     if url_type == "outbound":
         for keyword in _OUTBOUND_SUBTYPE_KEYWORDS:
@@ -139,13 +139,13 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     if url_type == "series":
         item_id = _find_numeric_id(parts, "series")
         if item_id:
-            return f"{admin_base}/rulesets/{item_id}"
+            return f"{admin_base}/series/{item_id}"
 
     if url_type == "report":
         item_id = _find_numeric_id(parts, "report")
         if item_id:
-            return f"{admin_base}/reports/{item_id}?app_id={app_id}"
-        return f"{admin_base}/reports?app_id={app_id}"
+            return f"{admin_base}/apps/{app_id}/custom_reports/{item_id}"
+        return f"{admin_base}/apps/{app_id}/custom_reports"
 
     if url_type == "user":
         item_id = _find_resource_id(parts, "users")
