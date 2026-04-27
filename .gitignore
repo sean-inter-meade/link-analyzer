@@ -9,3 +9,6 @@ build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# SQLite correction database (created at runtime)
+backend/data/*.db
