@@ -408,17 +408,9 @@ def _build_canvas(
                 type_label = link.url_type.replace("_", " ").title()
                 confidence_pct = f"{link.confidence:.0%}"
 
-                edited_marker = " (edited)" if link.corrected else ""
                 components.append({
                     "type": "text",
-                    "text": f"{type_icon} [{item_id}]({admin_url}) [app]({link_url}) ({confidence_pct}){edited_marker}",
-                })
-                components.append({
-                    "type": "button",
-                    "label": "Edit",
-                    "style": "link",
-                    "id": f"correct:{link_url}",
-                    "action": {"type": "submit"},
+                    "text": f"{type_icon} [{item_id}]({admin_url}) [app]({link_url}) ({confidence_pct})",
                 })
 
                 # link_parts = [f"[app]({link_url})"]
@@ -449,6 +441,13 @@ def _build_canvas(
             components.append({"type": "spacer", "size": "xs"})
 
     components.append({"type": "spacer", "size": "m"})
+    components.append({
+        "type": "button",
+        "label": "Edit Classifications",
+        "style": "secondary",
+        "id": "edit_classifications",
+        "action": {"type": "submit"},
+    })
     components.append({
         "type": "button",
         "label": "Refresh",
@@ -516,6 +515,66 @@ def _build_detail_canvas(
             "stored_data": {
                 "current_view": "detail",
                 "detail_url": link.url,
+            },
+        }
+    }
+
+
+def _build_edit_list_canvas(
+    response: AnalysisResponse,
+) -> dict[str, Any]:
+    components: list[dict[str, Any]] = []
+
+    components.append({
+        "type": "text",
+        "text": "*Edit Classifications*",
+    })
+    components.append({"type": "divider"})
+
+    intercom_links = [l for l in response.links if l.url_type != "other"]
+    if not intercom_links:
+        components.append({
+            "type": "text",
+            "text": "No editable links found.",
+        })
+    else:
+        for link in intercom_links:
+            status_icon = _STATUS_ICON.get(link.example_status, "\U00002753")
+            status_label = link.example_status.replace("_", " ").title()
+            type_icon = _TYPE_ICON.get(link.url_type, "\U0001f517")
+            type_label = link.url_type.replace("_", " ").title()
+            path = urlparse(link.url).path
+            path_segments = path.strip("/").split("/") if path else []
+            item_id = _extract_display_id(path_segments, link.url_type)
+            edited_marker = " (edited)" if link.corrected else ""
+
+            components.append({
+                "type": "text",
+                "text": f"{type_icon} *{type_label} {item_id}* — {status_icon} {status_label}{edited_marker}",
+            })
+            components.append({
+                "type": "button",
+                "label": "Change Status",
+                "style": "secondary",
+                "id": f"correct:{link.url}",
+                "action": {"type": "submit"},
+            })
+            components.append({"type": "spacer", "size": "xs"})
+
+    components.append({"type": "spacer", "size": "m"})
+    components.append({
+        "type": "button",
+        "label": "Back",
+        "style": "secondary",
+        "id": "back_to_main",
+        "action": {"type": "submit"},
+    })
+
+    return {
+        "canvas": {
+            "content": {"components": components},
+            "stored_data": {
+                "current_view": "edit_list",
             },
         }
     }
@@ -596,6 +655,11 @@ async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
             or ""
         )
         logger.info("Submit clicked=%s conversation=%s", clicked, conversation_id)
+
+        # Handle edit classifications list
+        if clicked == "edit_classifications":
+            response = _analyze_conversation(conversation_id)
+            return _build_edit_list_canvas(response)
 
         # Handle correction detail view
         if clicked.startswith("correct:"):
