@@ -116,6 +116,13 @@ def _get_provider() -> IntercomApiConversationProvider:
     return _provider
 
 
+def _extract_admin(body: dict[str, Any]) -> tuple[str | None, str | None]:
+    admin = body.get("admin") or {}
+    admin_id = str(admin["id"]) if "id" in admin else None
+    admin_email = admin.get("email")
+    return admin_id, admin_email
+
+
 def _run_pipeline(
     messages: list[ConversationMessage],
     conversation_id: str,
@@ -387,9 +394,13 @@ def _build_canvas(
                 type_label = link.url_type.replace("_", " ").title()
                 confidence_pct = f"{link.confidence:.0%}"
 
+                edited_marker = " ✏️" if link.corrected else ""
                 components.append({
-                    "type": "text",
-                    "text": f"{type_icon} [{item_id}]({admin_url}) [app]({link_url}) ({confidence_pct})",
+                    "type": "button",
+                    "label": f"{type_icon} {type_label} {item_id} ({confidence_pct}){edited_marker}",
+                    "style": "link",
+                    "id": f"correct:{link_url}",
+                    "action": {"type": "submit"},
                 })
 
                 # link_parts = [f"[app]({link_url})"]
@@ -429,6 +440,67 @@ def _build_canvas(
     })
 
     return {"canvas": {"content": {"components": components}}}
+
+
+def _build_detail_canvas(
+    link: ExtractedLink,
+    conversation_id: str,
+) -> dict[str, Any]:
+    components: list[dict[str, Any]] = []
+
+    status_icon = _STATUS_ICON.get(link.example_status, "\U00002753")
+    status_label = link.example_status.replace("_", " ").title()
+    type_label = link.url_type.replace("_", " ").title()
+    edited_marker = " (edited)" if link.corrected else ""
+
+    components.append({
+        "type": "text",
+        "text": f"*{type_label}*: [{link.url}]({link.url})",
+    })
+    components.append({
+        "type": "text",
+        "text": f"Current status: {status_icon} {status_label}{edited_marker}",
+    })
+    components.append({"type": "divider"})
+    components.append({
+        "type": "text",
+        "text": "*Change status:*",
+    })
+    components.append({"type": "spacer", "size": "xs"})
+
+    for status_value, label, icon in [
+        ("working_example", "Mark as Working", "\U0001f7e2"),
+        ("broken_example", "Mark as Broken", "\U0001f534"),
+        ("neutral_or_unknown", "Mark as Unknown", "\U00002753"),
+    ]:
+        if status_value == link.example_status:
+            continue
+        components.append({
+            "type": "button",
+            "label": f"{icon} {label}",
+            "style": "secondary",
+            "id": f"set_status:{status_value}:{link.url}",
+            "action": {"type": "submit"},
+        })
+
+    components.append({"type": "spacer", "size": "m"})
+    components.append({
+        "type": "button",
+        "label": "Back",
+        "style": "secondary",
+        "id": "back_to_main",
+        "action": {"type": "submit"},
+    })
+
+    return {
+        "canvas": {
+            "content": {"components": components},
+            "stored_data": {
+                "current_view": "detail",
+                "detail_url": link.url,
+            },
+        }
+    }
 
 
 def _error_canvas(message: str) -> dict[str, Any]:
@@ -495,9 +567,58 @@ async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
         )
         logger.info("Submit clicked=%s conversation=%s", clicked, conversation_id)
 
+        # Handle correction detail view
+        if clicked.startswith("correct:"):
+            url = clicked[len("correct:"):]
+            response = _analyze_conversation(conversation_id)
+            link = next((l for l in response.links if l.url == url), None)
+            if link is None:
+                return _error_canvas(f"Link not found: {url}")
+            return _build_detail_canvas(link, conversation_id)
+
+        # Handle status change
+        if clicked.startswith("set_status:"):
+            remainder = clicked[len("set_status:"):]
+            sep_idx = remainder.index(":")
+            new_status = remainder[:sep_idx]
+            url = remainder[sep_idx + 1:]
+            admin_id, admin_email = _extract_admin(body)
+            response = _analyze_conversation(conversation_id)
+            link = next((l for l in response.links if l.url == url), None)
+            if link:
+                _correction_store.save_correction(
+                    conversation_id=conversation_id,
+                    message_id=link.message_id,
+                    url=url,
+                    original_status=link.example_status,
+                    corrected_status=new_status,
+                    admin_id=admin_id,
+                    admin_email=admin_email,
+                )
+            response = _analyze_conversation(conversation_id)
+            filtered = _apply_filters(response, set())
+            canvas = _build_canvas(filtered)
+            canvas["canvas"]["stored_data"] = {"current_filters": [], "current_view": "main"}
+            return canvas
+
+        # Handle back to main
+        if clicked == "back_to_main":
+            response = _analyze_conversation(conversation_id)
+            stored = body.get("stored_data", {})
+            active_filters: set[str] = set(stored.get("current_filters", []))
+            filtered = _apply_filters(response, active_filters)
+            canvas = _build_canvas(filtered, active_filters)
+            canvas["canvas"]["stored_data"] = {
+                "current_filters": sorted(active_filters),
+                "current_view": "main",
+            }
+            return canvas
+
+        # Handle refresh
         if clicked == "refresh":
             _cache.invalidate(conversation_id)
 
+        # Handle filters (existing logic)
         stored = body.get("stored_data", {})
         active_filters: set[str] = set(stored.get("current_filters", []))
 
@@ -512,7 +633,10 @@ async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
         filtered = _apply_filters(response, active_filters)
         canvas = _build_canvas(filtered, active_filters)
 
-        canvas["canvas"]["stored_data"] = {"current_filters": sorted(active_filters)}
+        canvas["canvas"]["stored_data"] = {
+            "current_filters": sorted(active_filters),
+            "current_view": "main",
+        }
         return canvas
     except Exception as exc:
         logger.exception("canvas_submit failed")
