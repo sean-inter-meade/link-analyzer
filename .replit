@@ -48,3 +48,7 @@ waitForPort = 8080
 
 [agent]
 expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000
