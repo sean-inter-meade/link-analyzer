@@ -98,17 +98,17 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
             or _find_resource_id(parts, "actions")
         )
         if item_id:
-            return f"{admin_base}/rulesets/{item_id}"
+            return f"{admin_base}/workflow_connector/{item_id}?app_id={app_id}"
 
     if url_type == "procedure":
         item_id = _find_numeric_id(parts, "procedures")
         if item_id:
-            return f"{admin_base}/fin_procedures/{item_id}?app_id={app_id}"
+            return f"{admin_base}/rulesets/{item_id}"
 
     if url_type == "guidance":
         item_id = _find_numeric_id(parts, "guidance")
         if item_id:
-            return f"{admin_base}/fin_procedures?app_id={app_id}"
+            return f"{admin_base}/apps/{app_id}/ai_agent_guidelines/{item_id}"
 
     if url_type == "article":
         item_id = _find_resource_id(parts, "articles")
@@ -122,8 +122,11 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
 
     if url_type == "knowledge_hub":
         content_id = query.get("activeContentId", [None])[0]
+        content_type = query.get("activeContentType", [None])[0]
         if content_id:
-            return f"{admin_base}/content_library_folders?app_id={app_id}&activeContentId={content_id}"
+            if content_type == "article":
+                return f"{admin_base}/articles/{content_id}"
+            return f"{admin_base}/external_contents/{content_id}"
         folder_id = _find_resource_id(parts, "folder")
         if folder_id:
             return f"{admin_base}/content_library_folders/{folder_id}?app_id={app_id}"
