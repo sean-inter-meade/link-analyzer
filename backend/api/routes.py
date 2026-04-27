@@ -394,10 +394,14 @@ def _build_canvas(
                 type_label = link.url_type.replace("_", " ").title()
                 confidence_pct = f"{link.confidence:.0%}"
 
-                edited_marker = " ✏️" if link.corrected else ""
+                edited_marker = " (edited)" if link.corrected else ""
+                components.append({
+                    "type": "text",
+                    "text": f"{type_icon} [{item_id}]({admin_url}) [app]({link_url}) ({confidence_pct}){edited_marker}",
+                })
                 components.append({
                     "type": "button",
-                    "label": f"{type_icon} {type_label} {item_id} ({confidence_pct}){edited_marker}",
+                    "label": "Edit",
                     "style": "link",
                     "id": f"correct:{link_url}",
                     "action": {"type": "submit"},
