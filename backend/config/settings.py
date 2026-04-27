@@ -20,3 +20,5 @@ CACHE_MAX_SIZE: int = int(os.environ.get("CACHE_MAX_SIZE", "100"))
 
 RATE_LIMIT_REQUESTS: int = int(os.environ.get("RATE_LIMIT_REQUESTS", "30"))
 RATE_LIMIT_WINDOW_SECONDS: int = int(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60"))
+
+OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")

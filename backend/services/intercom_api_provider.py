@@ -91,5 +91,38 @@ class IntercomApiConversationProvider(ConversationProvider):
             logger.exception("Failed to fetch conversation %s from Intercom API", conversation_id)
             return []
 
+    def create_note(
+        self,
+        conversation_id: str,
+        admin_id: str,
+        body: str,
+    ) -> bool:
+        if not self._api_token:
+            logger.error("No Intercom API token configured; cannot create note")
+            return False
+
+        try:
+            with httpx.Client(timeout=30.0) as client:
+                response = client.post(
+                    f"{self._api_base}/conversations/{conversation_id}/reply",
+                    headers={
+                        "Authorization": f"Bearer {self._api_token}",
+                        "Intercom-Version": "2.11",
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                    json={
+                        "message_type": "note",
+                        "type": "admin",
+                        "admin_id": admin_id,
+                        "body": body,
+                    },
+                )
+                response.raise_for_status()
+                return True
+        except Exception:
+            logger.exception("Failed to create note on conversation %s", conversation_id)
+            return False
+
     def _map_author_type(self, raw: str) -> AuthorType:
         return _AUTHOR_TYPE_MAP.get(raw.lower(), AuthorType.OTHER)
