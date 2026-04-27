@@ -24,6 +24,7 @@ from backend.services.cache import AnalysisCache
 from backend.services.problem_summarizer import ProblemSummarizer
 from backend.services.admin_url_builder import build_admin_url
 from backend.classifiers.hybrid_classifier import HybridClassifier
+from backend.services.correction_store import CorrectionStore
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -37,6 +38,7 @@ _grouper = Grouper()
 _classifier = HybridClassifier(use_transformer=USE_TRANSFORMER)
 _summarizer = ProblemSummarizer()
 _provider = IntercomApiConversationProvider()
+_correction_store = CorrectionStore()
 
 _STATUS_ICON = {
     "working_example": "\U0001f7e2",
@@ -183,17 +185,38 @@ def _run_pipeline(
     )
 
 
+def _apply_corrections(
+    response: AnalysisResponse,
+    correction_store: CorrectionStore | None = None,
+) -> AnalysisResponse:
+    store = correction_store or _correction_store
+    corrections = store.get_corrections(response.conversation_id)
+    if not corrections:
+        return response
+
+    for link in response.links:
+        corrected_status = corrections.get(link.url)
+        if corrected_status:
+            link.example_status = corrected_status
+            link.corrected = True
+
+    summary, groups = _grouper.group_by_status(response.links)
+    response.summary = summary
+    response.groups = groups
+    return response
+
+
 def _analyze_conversation(conversation_id: str) -> AnalysisResponse:
     cached = _cache.get(conversation_id)
     if cached is not None:
         logger.info("Cache hit for conversation %s", conversation_id)
-        return cached
+        return _apply_corrections(cached)
 
     provider = _get_provider()
     messages = provider.get_messages(conversation_id)
     response = _run_pipeline(messages, conversation_id)
     _cache.put(conversation_id, response)
-    return response
+    return _apply_corrections(response)
 
 
 FILTER_OPTIONS = {
