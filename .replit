@@ -5,7 +5,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["libxcrypt", "libyaml"]
+packages = ["libxcrypt", "libyaml", "gcc"]
 
 [env]
 PYTHONPATH = "/home/runner/${REPL_SLUG}"
@@ -13,6 +13,7 @@ PYTHONPATH = "/home/runner/${REPL_SLUG}"
 [deployment]
 run = ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port 8080"]
 deploymentTarget = "cloudrun"
+build = ["sh", "-c", "pip install -r requirements.txt && python -m spacy download en_core_web_sm"]
 
 [[ports]]
 localPort = 8080
