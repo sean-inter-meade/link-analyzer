@@ -103,7 +103,7 @@ def build_admin_url(original_url: str, url_type: str) -> str | None:
     if url_type == "procedure":
         item_id = _find_numeric_id(parts, "procedures")
         if item_id:
-            return f"{admin_base}/rulesets/{item_id}"
+            return f"{admin_base}/fin_procedures/{item_id}?app_id={app_id}"
 
     if url_type == "guidance":
         item_id = _find_numeric_id(parts, "guidance")
