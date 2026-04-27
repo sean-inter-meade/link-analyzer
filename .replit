@@ -1,4 +1,4 @@
-run = "if [ ! -d .venv ]; then python -m venv .venv; fi && . .venv/bin/activate && pip install -r requirements.txt && python -m spacy download en_core_web_sm && uvicorn backend.app:app --host 0.0.0.0 --port 8080"
+run = "if [ ! -d .venv ]; then python -m venv .venv; fi && .venv/bin/pip install -r requirements.txt && .venv/bin/python -m spacy download en_core_web_sm && .venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8080"
 
 entrypoint = "backend/app.py"
 modules = ["python-3.11"]
@@ -13,9 +13,9 @@ PIP_USER = "0"
 USE_TRANSFORMER = "false"
 
 [deployment]
-run = ["sh", "-c", ". .venv/bin/activate && uvicorn backend.app:app --host 0.0.0.0 --port 8080"]
+run = ["sh", "-c", ".venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8080"]
 deploymentTarget = "cloudrun"
-build = ["sh", "-c", "rm -rf .venv && python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt && python -m spacy download en_core_web_sm"]
+build = ["sh", "-c", "rm -rf .venv && python -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/python -m spacy download en_core_web_sm"]
 
 [[ports]]
 localPort = 8080
@@ -42,7 +42,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = ". .venv/bin/activate && uvicorn backend.app:app --host 0.0.0.0 --port 8080"
+args = ".venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8080"
 waitForPort = 8080
 
 [agent]
