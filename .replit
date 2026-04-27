@@ -12,11 +12,13 @@ PYTHONPATH = "/home/runner/${REPL_SLUG}"
 PIP_USER = "0"
 USE_TRANSFORMER = "true"
 HF_HOME = "/home/runner/${REPL_SLUG}/.hf_cache"
+TRANSFORMERS_OFFLINE = "1"
+HF_HUB_OFFLINE = "1"
 
 [deployment]
 run = ["sh", "-c", ". .venv/bin/activate && uvicorn backend.app:app --host 0.0.0.0 --port 8080"]
 deploymentTarget = "cloudrun"
-build = ["sh", "-c", "python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt && python -m spacy download en_core_web_sm && python -c \"from transformers import pipeline; pipeline('zero-shot-classification', model='valhalla/distilbart-mnli-12-1')\""]
+build = ["sh", "-c", "python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt && python -m spacy download en_core_web_sm && TRANSFORMERS_OFFLINE=0 HF_HUB_OFFLINE=0 python -c \"from transformers import pipeline; pipeline('zero-shot-classification', model='valhalla/distilbart-mnli-12-1')\""]
 
 [[ports]]
 localPort = 8080
