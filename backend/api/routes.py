@@ -550,6 +550,18 @@ async def canvas_initialize(body: dict[str, Any]) -> dict[str, Any]:
         return _error_canvas(f"Error: {type(exc).__name__}: {exc}")
 
 
+@router.get("/corrections")
+async def get_corrections(
+    conversation_id: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    corrections = _correction_store.list_corrections(
+        conversation_id=conversation_id,
+        limit=limit,
+    )
+    return {"corrections": corrections, "total": len(corrections)}
+
+
 @router.post("/canvas/submit")
 async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
     try:
