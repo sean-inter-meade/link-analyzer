@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import logging
 
-from openai import OpenAI
+import httpx
 
 from backend.config.settings import OPENAI_API_KEY
 from backend.models import AnalysisResponse, ConversationMessage
 
 logger = logging.getLogger(__name__)
+
+_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
 _SYSTEM_PROMPT = """\
 You are a technical support analyst at Intercom. You help agents understand \
@@ -77,21 +79,34 @@ class AiExplainer:
                 "",
             )
 
-        client = OpenAI(api_key=self._api_key)
         user_prompt = _build_user_prompt(messages, analysis)
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.4,
-            max_tokens=1000,
-        )
+        try:
+            with httpx.Client(timeout=60.0) as client:
+                response = client.post(
+                    _OPENAI_URL,
+                    headers={
+                        "Authorization": f"Bearer {self._api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "gpt-4o-mini",
+                        "messages": [
+                            {"role": "system", "content": _SYSTEM_PROMPT},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        "temperature": 0.4,
+                        "max_tokens": 1000,
+                    },
+                )
+                response.raise_for_status()
 
-        content = response.choices[0].message.content or ""
-        return _split_response(content)
+            data = response.json()
+            content = data["choices"][0]["message"]["content"] or ""
+            return _split_response(content)
+        except Exception:
+            logger.exception("OpenAI API call failed")
+            return ("Failed to generate explanation. Check logs for details.", "")
 
 
 def _split_response(content: str) -> tuple[str, str]:

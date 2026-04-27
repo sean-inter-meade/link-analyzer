@@ -1,11 +1,11 @@
-run = "if [ ! -d .venv ]; then python -m venv .venv; fi && .venv/bin/pip install -r requirements.txt && .venv/bin/python -m spacy download en_core_web_sm && .venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8080"
+run = "if [ ! -d .venv ]; then uv venv .venv; fi && uv pip install -r requirements.txt --python .venv/bin/python && .venv/bin/python -m spacy download en_core_web_sm && .venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8080"
 
 entrypoint = "backend/app.py"
 modules = ["python-3.11"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["libxcrypt", "libyaml", "gcc"]
+packages = ["libxcrypt", "libyaml", "gcc", "uv"]
 
 [env]
 PYTHONPATH = "/home/runner/${REPL_SLUG}"
@@ -15,7 +15,7 @@ USE_TRANSFORMER = "false"
 [deployment]
 run = ["sh", "-c", ".venv/bin/uvicorn backend.app:app --host 0.0.0.0 --port 8080"]
 deploymentTarget = "cloudrun"
-build = ["sh", "-c", "rm -rf .venv && python -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/python -m spacy download en_core_web_sm"]
+build = ["sh", "-c", "rm -rf .venv && uv venv .venv && uv pip install -r requirements.txt --python .venv/bin/python && .venv/bin/python -m spacy download en_core_web_sm"]
 
 [[ports]]
 localPort = 8080
