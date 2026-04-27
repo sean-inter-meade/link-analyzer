@@ -211,6 +211,47 @@ Tests use `HybridClassifier(use_transformer=False)` so they run quickly without 
 - [ ] Fine-tune transformer on internal labeled examples
 - [ ] Add per-workspace URL pattern overrides
 
+## Enabling the Transformer Classifier
+
+By default, Link Analyzer uses a rule-based spaCy classifier only. An optional zero-shot transformer model (`valhalla/distilbart-mnli-12-1`) can be enabled for higher accuracy on ambiguous text. The hybrid classifier combines both with a 60/40 weighting (rule/transformer).
+
+**Requirements:** The transformer needs `torch` and `transformers` installed. These are not included in the default `requirements.txt` because they add ~2.5GB and exceed Replit's 8GB deployment image limit. If your hosting environment has enough space:
+
+1. Add the dependencies to `requirements.txt`:
+
+```
+transformers>=4.36.0
+torch>=2.1.0
+```
+
+For CPU-only PyTorch (~200MB instead of ~2GB), use the CPU index:
+
+```
+transformers>=4.36.0
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.1.0
+```
+
+2. Set the environment variable:
+
+```bash
+USE_TRANSFORMER=true
+```
+
+On Replit, add this to the `[env]` section in `.replit`. Otherwise, set it in your `.env` file or shell environment.
+
+3. The model downloads from HuggingFace on first use (~1GB). To avoid repeated downloads:
+   - Set `HF_HOME` to a persistent directory so the model cache survives restarts
+   - After the first download, set `TRANSFORMERS_OFFLINE=1` and `HF_HUB_OFFLINE=1` to load from cache only (no network calls at startup)
+
+4. To pre-download the model during a build step (recommended for deployments):
+
+```bash
+python -c "from transformers import pipeline; pipeline('zero-shot-classification', model='valhalla/distilbart-mnli-12-1')"
+```
+
+**Performance:** On CPU, each classification call takes ~100-500ms. A conversation with 20 links takes ~2-10 seconds total. GPU is not required.
+
 ## Extending
 
 **Adding a new URL type:** Edit `backend/config/url_patterns.yaml` and insert a new rule before the catch-all. Add the corresponding value to `UrlType` in `backend/models/classification.py`.
