@@ -283,6 +283,20 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@router.get("/healthz")
+async def healthz() -> dict[str, Any]:
+    transformer_loaded = False
+    if USE_TRANSFORMER and _classifier._transformer is not None:
+        transformer_loaded = bool(_classifier._transformer._pipeline)
+
+    return {
+        "status": "ok",
+        "use_transformer": USE_TRANSFORMER,
+        "transformer_loaded": transformer_loaded,
+        "intercom_token_set": bool(INTERCOM_API_TOKEN),
+    }
+
+
 @router.post("/analyze-conversation", response_model=AnalysisResponse)
 async def analyze_conversation(request: AnalyzeRequest) -> AnalysisResponse:
     return _analyze_conversation(request.conversation_id)

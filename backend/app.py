@@ -75,8 +75,9 @@ async def on_startup() -> None:
     )
     if USE_TRANSFORMER:
         logger.info("Preloading transformer model (USE_TRANSFORMER=true)...")
-        from backend.classifiers.transformer_classifier import TransformerClassifier
+        from backend.api.routes import _classifier
 
-        classifier = TransformerClassifier()
-        loaded = classifier._ensure_loaded()
+        loaded = False
+        if _classifier._transformer is not None:
+            loaded = _classifier._transformer._ensure_loaded()
         logger.info("Transformer model preloaded: %s", loaded)
