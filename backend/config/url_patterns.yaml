@@ -15,12 +15,8 @@
 # Shared hostname anchor used by all Intercom app rules.
 # Every rule below that targets the Intercom app UI uses _intercom_app_hosts.
 _intercom_app_hosts: &intercom_app
-  - app.intercom.com
-  - app.intercom.io
-  - app.eu.intercom.com
-  - app.eu.intercom.io
-  - app.au.intercom.com
-  - app.au.intercom.io
+  - intercom.com
+  - intercom.io
 
 rules:
   # Excluded — overview/dashboard/index pages with no specific resource
@@ -58,6 +54,7 @@ rules:
     hostnames: *intercom_app
     paths:
       - /procedures/
+      - /fin_procedures
       - /fin-ai-agent/procedures
     notes: Fin AI agent procedure URLs
 
@@ -117,14 +114,6 @@ rules:
       - /companies/
     notes: Intercom company profile URLs
 
-  - url_type: article
-    hostnames: *intercom_app
-    paths:
-      - /articles/
-      - /article/
-      - /educate/articles
-    notes: Intercom articles (internal editor view)
-
   - url_type: help_center
     hostnames:
       - help.
@@ -134,7 +123,15 @@ rules:
       - /articles/
       - /en/articles/
       - /collections/
-    notes: Public help center domains and article paths
+    notes: Public help center domains and article paths (must be before article rule)
+
+  - url_type: article
+    hostnames: *intercom_app
+    paths:
+      - /articles/
+      - /article/
+      - /educate/articles
+    notes: Intercom articles (internal editor view)
 
   - url_type: loom
     hostnames:

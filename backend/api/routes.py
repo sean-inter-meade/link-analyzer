@@ -686,44 +686,6 @@ async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
             response = _analyze_conversation(conversation_id)
             return _build_edit_list_canvas(response)
 
-        # Handle AI explanation generation
-        if clicked == "generate_explanation":
-            admin_id, admin_email = _extract_admin(body)
-            if not admin_id:
-                return _error_canvas("Error: Could not identify admin. Please reload the app.")
-
-            response = _analyze_conversation(conversation_id)
-            provider = _get_provider()
-            messages = provider.get_messages(conversation_id)
-
-            internal_note, customer_message = _ai_explainer.generate(messages, response)
-
-            if internal_note:
-                provider.create_note(
-                    conversation_id=conversation_id,
-                    admin_id=admin_id,
-                    body=f"<b>AI Analysis</b><br><br>{internal_note}",
-                )
-
-            if customer_message:
-                provider.create_note(
-                    conversation_id=conversation_id,
-                    admin_id=admin_id,
-                    body=f"<b>Draft Customer Message</b><br><br>{customer_message}",
-                )
-
-            filtered = _apply_filters(response, set())
-            canvas = _build_canvas(filtered)
-            canvas["canvas"]["stored_data"] = {"current_filters": [], "current_view": "main"}
-
-            success_components = canvas["canvas"]["content"]["components"]
-            success_components.insert(0, {
-                "type": "text",
-                "text": "✅ Explanation notes added to conversation.",
-            })
-
-            return canvas
-
         # Handle correction detail view
         if clicked.startswith("correct:"):
             url = clicked[len("correct:"):]
