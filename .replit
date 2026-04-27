@@ -10,6 +10,7 @@ packages = ["libxcrypt", "libyaml", "gcc"]
 [env]
 PYTHONPATH = "/home/runner/${REPL_SLUG}"
 PIP_USER = "0"
+USE_TRANSFORMER = "false"
 
 [deployment]
 run = ["sh", "-c", ". .venv/bin/activate && uvicorn backend.app:app --host 0.0.0.0 --port 8080"]
