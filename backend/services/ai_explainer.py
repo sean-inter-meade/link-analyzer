@@ -37,6 +37,26 @@ Do NOT include the section labels in your output, just the content separated \
 by the marker.\
 """
 
+_INVESTIGATION_PROMPT = """\
+You are a technical support analyst at Intercom. Your job is to produce a \
+single CLI command for Claude Code's /technical-investigation skill.
+
+You will receive:
+1. Conversation messages between the customer and support team
+2. A link analysis showing which shared links are working, broken, or unknown
+
+Your output MUST be exactly one line starting with "/technical-investigation " \
+followed by a concise prompt (under 500 characters) that:
+- Summarizes the customer's problem in one sentence
+- Lists the specific Intercom links (URLs) that need investigation, \
+  noting which appear broken vs working
+- Asks Claude to investigate the broken/unknown links to determine root cause
+- Includes the conversation ID for context
+
+Do NOT include any preamble, explanation, or formatting — output ONLY the \
+single /technical-investigation command line.\
+"""
+
 
 def _build_user_prompt(
     messages: list[ConversationMessage],
@@ -107,6 +127,48 @@ class AiExplainer:
         except Exception:
             logger.exception("OpenAI API call failed")
             return ("Failed to generate explanation. Check logs for details.", "")
+
+    def generate_investigation_prompt(
+        self,
+        messages: list[ConversationMessage],
+        analysis: AnalysisResponse,
+        conversation_id: str,
+    ) -> str:
+        if not self._api_key:
+            return "OpenAI API key not configured. Set OPENAI_API_KEY in your environment."
+
+        user_prompt = _build_user_prompt(messages, analysis)
+        user_prompt += f"\nConversation ID: {conversation_id}\n"
+
+        try:
+            with httpx.Client(timeout=60.0) as client:
+                response = client.post(
+                    _OPENAI_URL,
+                    headers={
+                        "Authorization": f"Bearer {self._api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "gpt-4o-mini",
+                        "messages": [
+                            {"role": "system", "content": _INVESTIGATION_PROMPT},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        "temperature": 0.3,
+                        "max_tokens": 500,
+                    },
+                )
+                response.raise_for_status()
+
+            data = response.json()
+            content = data["choices"][0]["message"]["content"] or ""
+            result = content.strip()
+            if not result.startswith("/technical-investigation"):
+                result = "/technical-investigation " + result
+            return result
+        except Exception:
+            logger.exception("OpenAI API call failed for investigation prompt")
+            return "Failed to generate investigation prompt. Check logs for details."
 
 
 def _split_response(content: str) -> tuple[str, str]:

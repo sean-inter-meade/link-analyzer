@@ -475,6 +475,13 @@ def _build_canvas(
     })
     components.append({
         "type": "button",
+        "label": "\U0001f50d Generate Investigation Prompt",
+        "style": "secondary",
+        "id": "generate_investigation",
+        "action": {"type": "submit"},
+    })
+    components.append({
+        "type": "button",
         "label": "Refresh",
         "style": "secondary",
         "id": "refresh",
@@ -720,6 +727,34 @@ async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
             success_components.insert(0, {
                 "type": "text",
                 "text": "✅ Explanation notes added to conversation.",
+            })
+
+            return canvas
+
+        # Handle investigation prompt generation
+        if clicked == "generate_investigation":
+            response = _analyze_conversation(conversation_id)
+            provider = _get_provider()
+            messages = provider.get_messages(conversation_id)
+
+            prompt = _ai_explainer.generate_investigation_prompt(
+                messages, response, conversation_id,
+            )
+
+            filtered = _apply_filters(response, set())
+            canvas = _build_canvas(filtered)
+            canvas["canvas"]["stored_data"] = {"current_filters": [], "current_view": "main"}
+
+            prompt_components = canvas["canvas"]["content"]["components"]
+            prompt_components.insert(0, {
+                "type": "text",
+                "text": "🔍 **Investigation Prompt** — copy and paste into Claude Code:",
+                "style": "header",
+            })
+            prompt_components.insert(1, {
+                "type": "text",
+                "text": prompt,
+                "style": "paragraph",
             })
 
             return canvas
