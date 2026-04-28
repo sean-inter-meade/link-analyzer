@@ -733,6 +733,10 @@ async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
 
         # Handle investigation prompt generation
         if clicked == "generate_investigation":
+            admin_id, admin_email = _extract_admin(body)
+            if not admin_id:
+                return _error_canvas("Error: Could not identify admin. Please reload the app.")
+
             response = _analyze_conversation(conversation_id)
             provider = _get_provider()
             messages = provider.get_messages(conversation_id)
@@ -741,20 +745,23 @@ async def canvas_submit(body: dict[str, Any]) -> dict[str, Any]:
                 messages, response, conversation_id,
             )
 
+            if prompt:
+                provider.create_note(
+                    conversation_id=conversation_id,
+                    admin_id=admin_id,
+                    body=f"<b>🔍 Investigation Prompt</b><br><br>"
+                         f"Copy and paste into Claude Code:<br><br>"
+                         f"<pre>{prompt}</pre>",
+                )
+
             filtered = _apply_filters(response, set())
             canvas = _build_canvas(filtered)
             canvas["canvas"]["stored_data"] = {"current_filters": [], "current_view": "main"}
 
-            prompt_components = canvas["canvas"]["content"]["components"]
-            prompt_components.insert(0, {
+            success_components = canvas["canvas"]["content"]["components"]
+            success_components.insert(0, {
                 "type": "text",
-                "text": "🔍 **Investigation Prompt** — copy and paste into Claude Code:",
-                "style": "header",
-            })
-            prompt_components.insert(1, {
-                "type": "text",
-                "text": prompt,
-                "style": "paragraph",
+                "text": "✅ Investigation prompt added to conversation.",
             })
 
             return canvas
